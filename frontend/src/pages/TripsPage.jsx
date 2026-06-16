@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { createTrip, deleteTrip, updateTrip, getTrips } from "../api/tripApi";
+import {Link} from "react-router-dom";
+import {useEffect, useState} from "react";
+import {createTrip, deleteTrip, updateTrip, getTrips} from "../api/tripApi";
 
 function TripsPage() {
   const [trips, setTrips] = useState([]);
@@ -194,7 +195,7 @@ function TripsPage() {
                     Cancel
                   </button>
                 </>
-              ) : (
+              ) : ( 
                 <>
                   <h3>{trip.title}</h3>
                   <p>{trip.destination}</p>
@@ -214,7 +215,9 @@ function TripsPage() {
                   )}
 
                   <p>People: {trip.num_of_people}</p>
-
+                  
+                  <Link to={`/trips/${trip.id}`}><button type="button">View Details</button></Link>
+                  
                   <button type="button" onClick={() => handleStartEdit(trip)}>
                     Edit
                   </button>

@@ -9,7 +9,7 @@ const getAllTrips = async () => {
 };
 
 const getTripById = async (id) => {
-  const result = await pool.query("SEELCT * FROM trips WHERE is = $1", [id]);
+  const result = await pool.query("SELECT * FROM trips WHERE id = $1", [id]);
   return result.rows[0];
 };
 

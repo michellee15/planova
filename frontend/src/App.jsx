@@ -6,8 +6,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<TripsPage/>}/>
-        <Route path="/trips/:id" element={<TripDetailsPage/>}/>
+        <Route path="/" element={<TripsPage />}/>
+        <Route path="/trips/:id" element={<TripDetailsPage />}/>
       </Routes>
     </BrowserRouter>
   )
