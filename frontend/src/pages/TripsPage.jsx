@@ -85,10 +85,10 @@ function TripsPage() {
     try {
       const updatedTrip = await updateTrip(id, {
         ...editFormData,
-        total_budget: editFormData.total_budget || null,
+        total_budget: editFormData.total_budget ? Number(editFormData.total_budget) : null,
         num_of_people: Number(editFormData.num_of_people) || 1,
       });
-      setTrips((prevTrip) => prevTrip.map((trip) =>(trip.id === id ? updatedTrip : trip)));
+      await loadTrips();
       handleCancelEdit();
     } catch (error) {
       console.error("Error updating trip: ", error);
@@ -124,96 +124,109 @@ function TripsPage() {
       {trips.length === 0 ? (
         <p>No trips yet.</p>
       ) : (
-        trips.map((trip) => (
-          <article key={trip.id}>
-            {String(editingTripId) === String(trip.id) ? (
-              <>
-                <input
-                  type="text"
-                  name="title"
-                  value={editFormData.title}
-                  onChange={handleEditChange}
-                  placeholder="Trip title"
-                />
+        trips.map((trip) => {
+          const isEditing = String(editingTripId) === String(trip.id);
 
-                <input
-                  type="text"
-                  name="destination"
-                  value={editFormData.destination}
-                  onChange={handleEditChange}
-                  placeholder="Destination"
-                />
+          return (
+            <article key={trip.id}>
+              {isEditing ? (
+                <>
+                  <input
+                    type="text"
+                    name="title"
+                    value={editFormData.title}
+                    onChange={handleEditChange}
+                    placeholder="Trip title"
+                  />
 
-                <input
-                  type="date"
-                  name="start_date"
-                  value={editFormData.start_date}
-                  onChange={handleEditChange}
-                />
+                  <input
+                    type="text"
+                    name="destination"
+                    value={editFormData.destination}
+                    onChange={handleEditChange}
+                    placeholder="Destination"
+                  />
 
-                <input
-                  type="date"
-                  name="end_date"
-                  value={editFormData.end_date}
-                  onChange={handleEditChange}
-                />
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={editFormData.start_date}
+                    onChange={handleEditChange}
+                  />
 
-                <input
-                  type="number"
-                  name="total_budget"
-                  value={editFormData.total_budget}
-                  onChange={handleEditChange}
-                  placeholder="Total budget"
-                />
+                  <input
+                    type="date"
+                    name="end_date"
+                    value={editFormData.end_date}
+                    onChange={handleEditChange}
+                  />
 
-                <input
-                  type="text"
-                  name="currency"
-                  value={editFormData.currency}
-                  onChange={handleEditChange}
-                  placeholder="Currency"
-                />
+                  <input
+                    type="number"
+                    name="total_budget"
+                    value={editFormData.total_budget}
+                    onChange={handleEditChange}
+                    placeholder="Total budget"
+                  />
 
-                <input
-                  type="number"
-                  name="num_of_people"
-                  value={editFormData.number_of_people}
-                  onChange={handleEditChange}
-                  placeholder="Number of people"
-                  min="1"
-                />
+                  <input
+                    type="text"
+                    name="currency"
+                    value={editFormData.currency}
+                    onChange={handleEditChange}
+                    placeholder="Currency"
+                  />
 
-                <button onClick={() => handleUpdateTrip(trip.id)}>Save</button>
-                <button onClick={handleCancelEdit}>Cancel</button>
-              </>
-            ) : (
-              <>
-                <h3>{trip.title}</h3>
-                <p>{trip.destination}</p>
+                  <input
+                    type="number"
+                    name="num_of_people"
+                    value={editFormData.num_of_people}
+                    onChange={handleEditChange}
+                    placeholder="Number of people"
+                    min="1"
+                  />
 
-                {trip.start_date && (
-                  <p>Start date: {trip.start_date.slice(0, 10)}</p>
-                )}
-                {trip.end_date && (
-                  <p>End date: {trip.end_date.slice(0, 10)}</p>
-                )}
-                {trip.total_budget && (
-                  <p>
-                    Budget: {trip.currency} {trip.total_budget}
-                  </p>
-                )}
-                <p>People: {trip.num_of_people}</p>
+                  <button type="button" onClick={() => handleUpdateTrip(trip.id)}>
+                    Save
+                  </button>
 
-                <button type="button" onClick={() => handleStartEdit(trip)}>
-                  Edit
-                </button>
-                <button type="button" onClick={() => handleDeleteTrip(trip.id)}>
-                  Delete
-                </button>
-              </>
-            )}
-          </article>
-        ))
+                  <button type="button" onClick={handleCancelEdit}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3>{trip.title}</h3>
+                  <p>{trip.destination}</p>
+
+                  {trip.start_date && (
+                    <p>Start date: {trip.start_date.slice(0, 10)}</p>
+                  )}
+
+                  {trip.end_date && (
+                    <p>End date: {trip.end_date.slice(0, 10)}</p>
+                  )}
+
+                  {trip.total_budget && (
+                    <p>
+                      Budget: {trip.currency} {trip.total_budget}
+                    </p>
+                  )}
+
+                  <p>People: {trip.num_of_people}</p>
+
+                  <button type="button" onClick={() => handleStartEdit(trip)}>
+                    Edit
+                  </button>
+
+                  <button type="button" onClick={() => handleDeleteTrip(trip.id)}>
+                    Delete
+                  </button>
+                </>
+              )}
+            </article>
+          );
+        })
       )}
     </section>
     </main>
