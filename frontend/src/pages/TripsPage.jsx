@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createTrip, getTrips } from "../api/tripApi";
+import { createTrip, deleteTrip, updateTrip, getTripById, getTrips } from "../api/tripApi";
 
 function TripsPage() {
   const [trips, setTrips] = useState([]);
