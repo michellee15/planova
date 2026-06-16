@@ -36,6 +36,15 @@ function TripsPage() {
       console.error("Error creating trip: ", error);
     }
   };
+  
+  const handleDeleteTrip = async (id) => {
+    try {
+      await deleteTrip(id);
+      setTrips((prevTrip) => prevTrip.filter((trip) => trip.id !== id));
+    } catch (error) {
+      console.error("Error deleting trip: ", error);
+    }
+  };
 
   if (loading) {
     return <p>Loading trips ...</p>
@@ -70,6 +79,7 @@ function TripsPage() {
             <article key={trip.id}>
               <h3>{trip.title}</h3>
               <p>{trip.destination}</p>
+              <button onClick={() => handleDeleteTrip(trip.id)}>Delete</button>
             </article>
           ))
         )}
