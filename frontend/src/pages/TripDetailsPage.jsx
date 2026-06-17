@@ -1,19 +1,32 @@
 import {useEffect, useState} from "react";
 import {Link, useParams} from "react-router-dom";
 import { getTripById } from "../api/tripApi";
+import { getExpensesByTripId } from "../api/expenseApi";
 
 function TripDetailsPage() {
   const {id} = useParams();
   const [trip, setTrip] = useState(null);
   const[loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expenses, setExpenses] = useState([]);
+
+  const loadExpenses = async () => {
+    try {
+      const data = await getExpensesByTripId(id);
+      setExpenses(data);
+    } catch (error) {
+      console.error("Error loading expenses: ", error);
+    }
+  }
 
   useEffect(() => {
-    const loadTrip = async () => {
+    const loadTripDetails = async () => {
       try {
         setLoading(true);
         const data = await getTripById(id);
         setTrip(data);
+        const expenseData = await getExpensesByTripId(id);
+        setExpenses(expenseData);
       } catch (error) {
         console.error("Error loading trip: ", error);
         setError("Failed to load trips.");
@@ -22,7 +35,7 @@ function TripDetailsPage() {
       }
     };
 
-    loadTrip();
+    loadTripDetails();
   }, [id]);
 
   if (loading) return <p>Loading trip...</p>;
@@ -68,9 +81,23 @@ function TripDetailsPage() {
       </section>
       <section>
         <h2>Expenses</h2>
-        <p>No expenses yet.</p>
+        {expenses.length === 0 ? (
+            <p>No expenses yet.</p>
+          ): (
+            expenses.map((expense) => (
+              <article key={expense.id}>
+                <h3>{expense.title}</h3>
+                <p>{trip.currency}{expense.amount}</p>
+                {expense.category && <p>Category: {expense.category}</p>}
+                {expense.paid_by && <p>Paid by: {expense.paid_by}</p>}
+                {expense.expense_date && (
+                  <p>Date: {expense.expense_date.slice(0, 10)}</p>
+                )}
+              </article>
+            ))
+          )
+        }
       </section>
-
       <section>
         <h2>Itinerary</h2>
         <p>No itinerary items yet.</p>
