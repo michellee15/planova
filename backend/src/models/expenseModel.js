@@ -15,7 +15,6 @@ const getExpensesByTripId = async (tripId) => {
 const createExpense = async (expenseData) => {
   const { trip_id, title, amount, category, paid_by, expense_date } =
     expenseData;
-
   const result = await pool.query(
     `INSERT INTO expenses 
       (trip_id, title, amount, category, paid_by, expense_date)
@@ -24,13 +23,11 @@ const createExpense = async (expenseData) => {
      RETURNING *`,
     [trip_id, title, amount, category, paid_by, expense_date]
   );
-
   return result.rows[0];
 };
 
 const updateExpense = async (id, expenseData) => {
   const { title, amount, category, paid_by, expense_date } = expenseData;
-
   const result = await pool.query(
     `UPDATE expenses
      SET title = $1,
@@ -42,7 +39,6 @@ const updateExpense = async (id, expenseData) => {
      RETURNING *`,
     [title, amount, category, paid_by, expense_date, id]
   );
-
   return result.rows[0];
 };
 
@@ -53,7 +49,6 @@ const deleteExpense = async (id) => {
      RETURNING *`,
     [id]
   );
-
   return result.rows[0];
 };
 
