@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const tripRoutes = require("./routes/tripRoutes");
+const expenseRoutes = require("./routes/expenseRoutes")
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/trips", tripRoutes);
+app.use("/api", expenseRoutes);
 
 const PORT = process.env.PORT || 5000;
 
