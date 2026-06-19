@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {Link, useParams} from "react-router-dom";
 import { getTripById } from "../api/tripApi";
-import { getExpensesByTripId, createExpense, deleteExpense} from "../api/expenseApi";
+import { getExpensesByTripId, createExpense, deleteExpense, updateExpense} from "../api/expenseApi";
 import TripHeader from "../components/tripDetails/TripHeader";
 import TripOverview from "../components/tripDetails/TripOverview";
 import BudgetSummary from "../components/tripDetails/BudgetSummary";
@@ -16,6 +16,10 @@ function TripDetailsPage() {
   const [expenses, setExpenses] = useState([]);
   const [expenseFormData, setExpenseFormData] = useState({
     title: "", amount: "", category: "", paid_by: "", expense_date:"",
+  });
+  const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const [editExpenseFormData, setEditExpenseFormData] = useState({
+    title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "",
   });
 
   useEffect(() => {
@@ -93,6 +97,59 @@ function TripDetailsPage() {
     }
   }
 
+  //function that saves edited data to backend 
+  const handleEditExpenseChange = (event) => {
+    const {name, value} = event.target;
+    setEditExpenseFormData((prevData) => ({
+      ...prevData, [name]: value,
+    }));
+  }
+
+  const handleEditExpense = async (expenseId) => {
+    if (!editExpenseFormData.title || !editExpenseFormData.amount) return;
+    const finalisedCategory = editExpenseFormData.category === "Others" ? editExpenseFormData.custom_category : editExpenseFormData.category;
+    try {
+      await updateExpense(expenseId, {
+        title: editExpenseFormData.title,
+        amount: Number(editExpenseFormData.amount),
+        category: finalisedCategory || null,
+        paid_by: editExpenseFormData.paid_by || null,
+        expense_date: editExpenseFormData.expense_date || null,
+      });
+      const updatedExpense = await getExpensesByTripId(id);
+      setExpenses(updatedExpense);
+      setEditingExpenseId(null);
+      setEditExpenseFormData({
+        title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "",
+      });
+    } catch (error) {
+      console.error("Error updating expense: ", error)
+    }
+  }
+
+  const handleStartEditExpense = async (expense) => {
+    try {
+      setEditingExpenseId(expense.id);
+      setEditExpenseFormData({
+        title: expense.title || "", 
+        amount: expense.amount || "", 
+        category: expense.category || "", 
+        custom_category: expense.custom_category || "", 
+        paid_by: expense.paid_by || "", 
+        expense_date: expense.expense_date ? expense.expense_date.slice(0,10) : "",
+      });
+    } catch (error) {
+      console.error("Error updating expense: ", error);
+    }
+  }
+
+  const handleCancelEditExpense = () => {
+    setEditingExpenseId(null);
+    setEditExpenseFormData({
+      title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "",
+    });
+  }
+
   if (loading) return <p>Loading trip...</p>;
 
   if (error) {
@@ -129,6 +186,12 @@ function TripDetailsPage() {
         <ExpenseList
           expenses={expenses}
           currency={trip.currency}
+          editingExpenseId={editingExpenseId}
+          editFormData={editExpenseFormData}
+          onEditChange={handleEditExpenseChange}
+          onStartEditExpense={handleStartEditExpense}
+          onEditExpense={handleEditExpense}
+          onCancelEditExpense={handleCancelEditExpense}
           onDeleteExpense={handleDeleteExpense}
         />
       </section>
