@@ -1,10 +1,12 @@
 import {useEffect, useState} from "react";
 import {Link, useParams} from "react-router-dom";
 import { getTripById } from "../api/tripApi";
-import { getExpensesByTripId } from "../api/expenseApi";
+import { getExpensesByTripId, createExpense, } from "../api/expenseApi";
 import TripHeader from "../components/tripDetails/TripHeader";
 import TripOverview from "../components/tripDetails/TripOverview";
 import BudgetSummary from "../components/tripDetails/BudgetSummary";
+import ExpenseForm from "../components/expenses/ExpenseForm";
+import ExpenseList from "../components/expenses/ExpenseList";
 
 function TripDetailsPage() {
   const {id} = useParams();
@@ -12,6 +14,9 @@ function TripDetailsPage() {
   const[loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expenses, setExpenses] = useState([]);
+  const [expenseFormData, setExpenseFormData] = useState({
+    title: "", amount: "", category: "", paid_by: "", expense_date:"",
+  });
 
   useEffect(() => {
     const loadTripDetails = async () => {
@@ -49,6 +54,35 @@ function TripDetailsPage() {
     loadExpenses();
   }, [id]);
 
+  const handleExpenseChange = (event) => {
+    const {name, value} = event.target;
+    setExpenseFormData((prevData) => ({
+      ...prevData, [name]: value,
+    }));
+  };
+
+  const handleCreateExpense = async (event) => {
+    event.preventDefault();
+    if (!expenseFormData.title || !expenseFormData.amount) return;
+    const finalisedCategory = expenseFormData.category === "Others" ? expenseFormData.custom_category : expenseFormData.category;
+    try {
+      await createExpense(id, {
+      title: expenseFormData.title, 
+      amount: Number(expenseFormData.amount), 
+      category: finalisedCategory || null, 
+      paid_by: expenseFormData.paid_by || null, 
+      expense_date: expenseFormData.expense_date || null,
+      });
+      const updatedExpense = await getExpensesByTripId(id);
+      setExpenses(updatedExpense);
+      setExpenseFormData({
+        title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "", 
+      });
+    } catch (error) {
+      console.error("Error creating expense: ", error);
+    }
+  };
+
   if (loading) return <p>Loading trip...</p>;
 
   if (error) {
@@ -77,22 +111,15 @@ function TripDetailsPage() {
       <BudgetSummary trip={trip} expenses={expenses || []}/>
       <section>
         <h2>Expenses</h2>
-        {expenses.length === 0 ? (
-            <p>No expenses yet.</p>
-          ): (
-            expenses.map((expense) => (
-              <article key={expense.id}>
-                <h3>{expense.title}</h3>
-                <p>{trip.currency}{expense.amount}</p>
-                {expense.category && <p>Category: {expense.category}</p>}
-                {expense.paid_by && <p>Paid by: {expense.paid_by}</p>}
-                {expense.expense_date && (
-                  <p>Date: {expense.expense_date.slice(0, 10)}</p>
-                )}
-              </article>
-            ))
-          )
-        }
+        <ExpenseForm
+          formData={expenseFormData}
+          onChange={handleExpenseChange}
+          onSubmit={handleCreateExpense}
+        />
+        <ExpenseList
+          expenses={expenses}
+          currency={trip.currency}
+        />
       </section>
       <section>
         <h2>Itinerary</h2>
