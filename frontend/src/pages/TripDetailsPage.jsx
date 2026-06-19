@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {Link, useParams} from "react-router-dom";
 import { getTripById } from "../api/tripApi";
-import { getExpensesByTripId, createExpense, } from "../api/expenseApi";
+import { getExpensesByTripId, createExpense, deleteExpense} from "../api/expenseApi";
 import TripHeader from "../components/tripDetails/TripHeader";
 import TripOverview from "../components/tripDetails/TripOverview";
 import BudgetSummary from "../components/tripDetails/BudgetSummary";
@@ -83,6 +83,16 @@ function TripDetailsPage() {
     }
   };
 
+  const handleDeleteExpense = async (expenseId) => {
+    try {
+      await deleteExpense(expenseId);
+      const updatedExpense = await getExpensesByTripId(id);
+      setExpenses(updatedExpense);
+    } catch (error) {
+      console.error("Error deleting expense: ", error);
+    }
+  }
+
   if (loading) return <p>Loading trip...</p>;
 
   if (error) {
@@ -119,6 +129,7 @@ function TripDetailsPage() {
         <ExpenseList
           expenses={expenses}
           currency={trip.currency}
+          onDeleteExpense={handleDeleteExpense}
         />
       </section>
       <section>

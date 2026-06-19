@@ -1,6 +1,6 @@
 import ExpenseItem from "./ExpenseItem";
 
-function ExpenseList({expenses, currency}) {
+function ExpenseList({expenses, currency, onDeleteExpense}) {
   if (expenses.length === 0) return <p>No expenses yet.</p>
   return (
     <div>
@@ -9,6 +9,7 @@ function ExpenseList({expenses, currency}) {
           key={expense.id}
           expense={expense}
           currency={currency}
+          onDeleteExpense={onDeleteExpense}
         />
       ))}
     </div>
