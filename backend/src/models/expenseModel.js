@@ -2,7 +2,7 @@ const pool = require("../config/db");
 
 const getExpensesByTripId = async (tripId) => {
   const result = await pool.query(
-    `SELECT *
+    `SELECT id, trip_id, title, amount, category, paid_by, expense_date::text AS expense_date, created_at
      FROM expenses
      WHERE trip_id = $1
      ORDER BY created_at DESC`,
