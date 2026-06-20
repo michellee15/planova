@@ -57,8 +57,7 @@ function useExpenses(tripId) {
       paid_by: expenseFormData.paid_by || null, 
       expense_date: expenseFormData.expense_date || null,
       });
-      const updatedExpense = await getExpensesByTripId(tripId);
-      setExpenses(updatedExpense);
+      await loadExpenses();
       setExpenseFormData({
         title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "", 
       });
@@ -70,8 +69,7 @@ function useExpenses(tripId) {
   const handleDeleteExpense = async (expenseId) => {
     try {
       await deleteExpense(expenseId);
-      const updatedExpense = await getExpensesByTripId(tripId);
-      setExpenses(updatedExpense);
+      await loadExpenses();
     } catch (error) {
       console.error("Error deleting expense: ", error);
     }
@@ -96,8 +94,7 @@ function useExpenses(tripId) {
         paid_by: editExpenseFormData.paid_by || null,
         expense_date: editExpenseFormData.expense_date || null,
       });
-      const updatedExpense = await getExpensesByTripId(tripId);
-      setExpenses(updatedExpense);
+      await loadExpenses();
       setEditingExpenseId(null);
       setEditExpenseFormData({
         title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "",
