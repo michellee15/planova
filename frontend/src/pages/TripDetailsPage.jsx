@@ -8,6 +8,9 @@ import BudgetSummary from "../components/tripDetails/BudgetSummary";
 import ExpenseForm from "../components/expenses/ExpenseForm";
 import ExpenseList from "../components/expenses/ExpenseList";
 import useExpenses from "../hooks/useExpenses";
+import MemberForm from "../components/members/MemberForm";
+import MemberList from "../components/members/MemberList";
+import useMembers from "../hooks/useMembers";
 
 function TripDetailsPage() {
   const { id } = useParams();
@@ -27,6 +30,10 @@ function TripDetailsPage() {
     handleCancelEditExpense,
     handleEditExpense,
   } = useExpenses(id);
+
+  const {
+    members, memberFormData, handleMemberChange, handleCreateMember, handleDeleteMember,
+  } = useMembers(id);
 
   useEffect(() => {
     const loadTripDetails = async () => {
@@ -74,6 +81,19 @@ function TripDetailsPage() {
       <TripOverview trip={trip} />
       <BudgetSummary trip={trip} expenses={expenses} />
 
+      <section>
+        <h2>Trip Members</h2>
+        <MemberForm 
+          memberFormData={memberFormData}
+          handleMemberChange={handleMemberChange}
+          handleCreateMember={handleCreateMember}
+        />
+        <MemberList
+          members={members}
+          handleDeleteMember={handleDeleteMember}
+        />
+      </section>
+      
       <section>
         <h2>Expenses</h2>
 
