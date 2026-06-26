@@ -56,7 +56,7 @@ const createExpense = async (expenseData) => {
 };
 
 const updateExpense = async (id, expenseData) => {
-  const { title, amount, category, paid_by_member_id, expense_date } = expenseData;
+  const { title, amount, category, paid_by_member_id, split_member_ids, expense_date } = expenseData;
   const result = await pool.query(
     `UPDATE expenses
      SET title = $1,
@@ -68,7 +68,18 @@ const updateExpense = async (id, expenseData) => {
      RETURNING *`,
     [title, amount, category, paid_by_member_id, expense_date, id]
   );
-  return result.rows[0];
+  const updatedExpense = result.rows[0];
+  if (!updatedExpense) return null;
+  await pool.query(
+    `DELETE FROM expense_splits WHERE expense_id = $1`, [id]
+  );
+  const splitMembers = Array.isArray(split_member_ids) ? split_member_ids : [];
+  for (const memberId of splitMembers) {
+    await pool.query(
+      `INSERT INTO expense_splits (expense_id, member_id) VALUES ($1, $2)`, [id, memberId]
+    );
+  }
+  return updatedExpense;
 };
 
 const deleteExpense = async (id) => {

@@ -11,6 +11,7 @@ function ExpenseList({
   onEditExpense,
   onCancelEditExpense,
   onDeleteExpense,
+  onEditSplitMemberChange,
 }) {
   if (expenses.length === 0) {
     return <p>No expenses yet.</p>;
@@ -31,6 +32,7 @@ function ExpenseList({
           onEditExpense={onEditExpense}
           onCancelEditExpense={onCancelEditExpense}
           onDeleteExpense={onDeleteExpense}
+          onEditSplitMemberChange={onEditSplitMemberChange}
         />
       ))}
     </div>

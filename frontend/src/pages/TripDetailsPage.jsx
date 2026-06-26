@@ -103,7 +103,7 @@ function TripDetailsPage() {
           onChange={handleExpenseChange}
           onSubmit={handleCreateExpense}
           members={members}
-          onSplitMemberChange={handleSplitMemberChange}
+          onEditSplitMemberChange={handleSplitMemberChange}
         />
 
         <ExpenseList
@@ -117,6 +117,7 @@ function TripDetailsPage() {
           onEditExpense={handleEditExpense}
           onCancelEditExpense={handleCancelEditExpense}
           onDeleteExpense={handleDeleteExpense}
+          onEditSplitMemberChange={handleSplitMemberChange}
         />
       </section>
 

@@ -9,6 +9,7 @@ function ExpenseItem({
   onEditExpense,
   onCancelEditExpense,
   onDeleteExpense,
+  onEditSplitMemberChange
 }) {
   if (isEditing) {
     return (
@@ -50,17 +51,31 @@ function ExpenseItem({
           />
         )}
 
-        <select
-          name="paid_by_member_id"
-          value={editFormData.paid_by_member_id}
-          onChange={onEditChange}
-        >
-          <option value="">Select member</option>
-          {(members || []).map((member) => (
-            <option key={member.id} value={member.id}>{member.name}</option>
-          ))}
-        </select>
+          <select
+            name="paid_by_member_id"
+            value={editFormData.paid_by_member_id}
+            onChange={onEditChange}
+          >
+            <option value="">Select member</option>
+            {(members || []).map((member) => (
+              <option key={member.id} value={member.id}>{member.name}</option>
+            ))}
+          </select>
 
+          <fieldset>
+            <legend>Split with</legend>
+            {(members || []).map((member) => (
+              <label key={member.id}>
+                <input
+                  type="checkbox"
+                  value={member.id}
+                  checked={(editFormData.split_member_ids || []).includes(Number(member.id))}
+                  onChange={onEditSplitMemberChange}
+                />
+                {member.name}
+              </label>
+            ))}
+        </fieldset>
 
         <input
           type="date"

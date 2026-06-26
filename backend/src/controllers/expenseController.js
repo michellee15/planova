@@ -14,7 +14,7 @@ const getExpensesByTripId = async (req, res) => {
 const createExpense = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const { title, amount, category, paid_by_member_id, expense_date } = req.body;
+    const { title, amount, category, paid_by_member_id, split_member_ids, expense_date } = req.body;
     if (!title || amount === undefined || amount === null) return res.status(400).json({message: "Title and amount are required",});
 
     const newExpense = await expenseModel.createExpense({
@@ -23,6 +23,7 @@ const createExpense = async (req, res) => {
       amount,
       category: category || null,
       paid_by_member_id: paid_by_member_id || null,
+      split_member_ids: split_member_ids || [],
       expense_date: expense_date || null,
     });
 
@@ -36,7 +37,7 @@ const createExpense = async (req, res) => {
 const updateExpense = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, amount, category, paid_by_member_id, expense_date } = req.body;
+    const { title, amount, category, paid_by_member_id, split_member_ids, expense_date } = req.body;
 
     if (!title || amount === undefined || amount === null) return res.status(400).json({message: "Title and amount are required",});
     const updatedExpense = await expenseModel.updateExpense(id, {
@@ -44,6 +45,7 @@ const updateExpense = async (req, res) => {
       amount,
       category: category || null,
       paid_by_member_id: paid_by_member_id || null,
+      split_member_ids: split_member_ids || [],
       expense_date: expense_date || null,
     });
 
