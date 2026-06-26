@@ -9,11 +9,11 @@ import {
 function useExpenses(tripId) {
   const [expenses, setExpenses] = useState([]);
   const [expenseFormData, setExpenseFormData] = useState({
-    title: "", amount: "", category: "", paid_by_member_id: "", expense_date:"",
+    title: "", amount: "", category: "", paid_by_member_id: "", split_member_ids: [], expense_date:"",
   });
   const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [editExpenseFormData, setEditExpenseFormData] = useState({
-    title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", expense_date: "",
+    title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", split_member_ids: [], expense_date: "",
   });
 
   const loadExpenses = async () => {
@@ -47,7 +47,7 @@ function useExpenses(tripId) {
 
   const handleCreateExpense = async (event) => {
     event.preventDefault();
-    if (!expenseFormData.title || !expenseFormData.amount) return;
+    if (!expenseFormData.title || !expenseFormData.amount || expenseFormData.split_member_ids.length === 0) return;
     const finalisedCategory = expenseFormData.category === "Others" ? expenseFormData.custom_category : expenseFormData.category;
     try {
       await createExpense(tripId, {
@@ -55,11 +55,12 @@ function useExpenses(tripId) {
       amount: Number(expenseFormData.amount), 
       category: finalisedCategory || null, 
       paid_by_member_id: expenseFormData.paid_by_member_id || null, 
+      split_member_ids: expenseFormData.split_member_ids,
       expense_date: expenseFormData.expense_date || null,
       });
       await loadExpenses();
       setExpenseFormData({
-        title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", expense_date: "", 
+        title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", split_member_ids: [], expense_date: "", 
       });
     } catch (error) {
       console.error("Error creating expense: ", error);
@@ -92,12 +93,13 @@ function useExpenses(tripId) {
         amount: Number(editExpenseFormData.amount),
         category: finalisedCategory || null,
         paid_by_member_id: editExpenseFormData.paid_by_member_id || null,
+        split_member_ids: editExpenseFormData.split_member_ids,
         expense_date: editExpenseFormData.expense_date || null,
       });
       await loadExpenses();
       setEditingExpenseId(null);
       setEditExpenseFormData({
-        title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", expense_date: "",
+        title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", split_member_ids: [], expense_date: "",
       });
     } catch (error) {
       console.error("Error updating expense: ", error)
@@ -114,6 +116,7 @@ function useExpenses(tripId) {
         category: expense.category || "", 
         custom_category: expense.custom_category || "", 
         paid_by_member_id: expense.paid_by_member_id || "", 
+        split_member_ids: expense.split_members ? expense.split_members.map((member) => Number(member.id)) : [],
         expense_date: expense.expense_date ? expense.expense_date.slice(0,10) : "",
       });
     } catch (error) {
@@ -125,13 +128,32 @@ function useExpenses(tripId) {
   const handleCancelEditExpense = () => {
     setEditingExpenseId(null);
     setEditExpenseFormData({
-      title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", expense_date: "",
+      title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", split_member_ids: [], expense_date: "",
     });
   }
 
+  const handleSplitMemberChange = (event) => {
+    const memberId = Number(event.target.value);
+    const checked = event.target.checked;
+    setEditExpenseFormData((prevData) => {
+      const currentSplitMembers = prevData.split_member_ids || [];
+      if (checked) {
+        return {
+          ...prevData,
+          split_member_ids: [...currentSplitMembers, memberId],
+        };
+      }
+      return {
+        ...prevData,
+        split_member_ids: currentSplitMembers.filter((id) => id !== memberId),
+      };
+    });
+  };
+
   return {
     expenses, expenseFormData, editingExpenseId, editExpenseFormData, loadExpenses, handleExpenseChange, 
-    handleCreateExpense, handleEditExpense, handleEditExpenseChange, handleDeleteExpense, handleStartEditExpense, handleCancelEditExpense
+    handleCreateExpense, handleEditExpense, handleEditExpenseChange, handleDeleteExpense, handleStartEditExpense, 
+    handleCancelEditExpense, handleSplitMemberChange
   };
 }
 
