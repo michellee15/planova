@@ -3,6 +3,7 @@ import ExpenseItem from "./ExpenseItem";
 function ExpenseList({
   expenses,
   currency,
+  members,
   editingExpenseId,
   editFormData,
   onEditChange,
@@ -22,6 +23,7 @@ function ExpenseList({
           key={expense.id}
           expense={expense}
           currency={currency}
+          members={members}
           isEditing={String(editingExpenseId) === String(expense.id)}
           editFormData={editFormData}
           onEditChange={onEditChange}

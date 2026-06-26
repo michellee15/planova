@@ -9,11 +9,11 @@ import {
 function useExpenses(tripId) {
   const [expenses, setExpenses] = useState([]);
   const [expenseFormData, setExpenseFormData] = useState({
-    title: "", amount: "", category: "", paid_by: "", expense_date:"",
+    title: "", amount: "", category: "", paid_by_member_id: "", expense_date:"",
   });
   const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [editExpenseFormData, setEditExpenseFormData] = useState({
-    title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "",
+    title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", expense_date: "",
   });
 
   const loadExpenses = async () => {
@@ -54,12 +54,12 @@ function useExpenses(tripId) {
       title: expenseFormData.title, 
       amount: Number(expenseFormData.amount), 
       category: finalisedCategory || null, 
-      paid_by: expenseFormData.paid_by || null, 
+      paid_by_member_id: expenseFormData.paid_by_member_id || null, 
       expense_date: expenseFormData.expense_date || null,
       });
       await loadExpenses();
       setExpenseFormData({
-        title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "", 
+        title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", expense_date: "", 
       });
     } catch (error) {
       console.error("Error creating expense: ", error);
@@ -91,13 +91,13 @@ function useExpenses(tripId) {
         title: editExpenseFormData.title,
         amount: Number(editExpenseFormData.amount),
         category: finalisedCategory || null,
-        paid_by: editExpenseFormData.paid_by || null,
+        paid_by_member_id: editExpenseFormData.paid_by_member_id || null,
         expense_date: editExpenseFormData.expense_date || null,
       });
       await loadExpenses();
       setEditingExpenseId(null);
       setEditExpenseFormData({
-        title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "",
+        title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", expense_date: "",
       });
     } catch (error) {
       console.error("Error updating expense: ", error)
@@ -113,7 +113,7 @@ function useExpenses(tripId) {
         amount: expense.amount || "", 
         category: expense.category || "", 
         custom_category: expense.custom_category || "", 
-        paid_by: expense.paid_by || "", 
+        paid_by_member_id: expense.paid_by_member_id || "", 
         expense_date: expense.expense_date ? expense.expense_date.slice(0,10) : "",
       });
     } catch (error) {
@@ -125,7 +125,7 @@ function useExpenses(tripId) {
   const handleCancelEditExpense = () => {
     setEditingExpenseId(null);
     setEditExpenseFormData({
-      title: "", amount: "", category: "", custom_category: "", paid_by: "", expense_date: "",
+      title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", expense_date: "",
     });
   }
 

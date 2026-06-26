@@ -93,7 +93,7 @@ function TripDetailsPage() {
           handleDeleteMember={handleDeleteMember}
         />
       </section>
-      
+
       <section>
         <h2>Expenses</h2>
 
@@ -101,11 +101,13 @@ function TripDetailsPage() {
           formData={expenseFormData}
           onChange={handleExpenseChange}
           onSubmit={handleCreateExpense}
+          members={members}
         />
 
         <ExpenseList
           expenses={expenses}
           currency={trip.currency}
+          members={members}
           editingExpenseId={editingExpenseId}
           editFormData={editExpenseFormData}
           onEditChange={handleEditExpenseChange}

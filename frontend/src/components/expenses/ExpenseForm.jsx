@@ -1,5 +1,5 @@
 //displays the add expense form
-function ExpenseForm({formData, onChange, onSubmit}) {
+function ExpenseForm({formData, onChange, onSubmit, members}) {
   return (
     <form onSubmit={onSubmit}>
       <input
@@ -42,13 +42,16 @@ function ExpenseForm({formData, onChange, onSubmit}) {
         />
       )}
 
-      <input 
-        type="text"
-        name="paid_by"
-        value={formData.paid_by}
+      <select
+        name="paid_by_member_id"
+        value={formData.paid_by_member_id}
         onChange={onChange}
-        placeholder="Paid by"
-      />
+      >
+        <option value="">Select member</option>
+        {members.map((member) => (
+          <option key={member.id} value={member.id}>{member.name}</option>
+        ))}
+      </select>
 
       <input 
         type="date"
