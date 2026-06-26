@@ -10,20 +10,30 @@ const getExpensesByTripId = async (tripId) => {
       e.paid_by_member_id,
       e.expense_date::text AS expense_date,
       e.created_at,
-      tm.name AS payer_name 
+      payer.name AS payer_name,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', sm.id,
+            'name', sm.name
+          )
+        ) FILTER (WHERE sm.id IS NOT NULL),
+        '[]'::json
+      ) AS split_members
      FROM expenses e
-     LEFT JOIN trip_members tm
-     ON e.paid_by_member_id = tm.id
+     LEFT JOIN trip_members payer ON e.paid_by_member_id = payer.id
+     LEFT JOIN expense_splits es ON e.id = es.expense_id
+     LEFT JOIN trip_members sm ON es.member_id = sm.id
      WHERE e.trip_id = $1
+     GROUP BY e.id, payer.name
      ORDER BY e.created_at DESC`,
     [tripId]
   );
-
   return result.rows;
 };
 
 const createExpense = async (expenseData) => {
-  const { trip_id, title, amount, category, paid_by_member_id, expense_date } =
+  const { trip_id, title, amount, category, paid_by_member_id, split_member_ids, expense_date } =
     expenseData;
   const result = await pool.query(
     `INSERT INTO expenses 
@@ -33,7 +43,16 @@ const createExpense = async (expenseData) => {
      RETURNING *`,
     [trip_id, title, amount, category, paid_by_member_id, expense_date]
   );
-  return result.rows[0];
+  const newExpense = result.rows[0];
+  const splitMembers = Array.isArray(split_member_ids) ? split_member_ids : [];
+  for (const memberId of splitMembers) {
+    await pool.query(
+      `INSERT INTO expense_splits (expense_id, member_id)
+       VALUES ($1, $2)`,
+       [newExpense.id, memberId]
+    );
+  }
+  return newExpense;
 };
 
 const updateExpense = async (id, expenseData) => {

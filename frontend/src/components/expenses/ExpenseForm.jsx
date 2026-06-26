@@ -1,5 +1,5 @@
 //displays the add expense form
-function ExpenseForm({formData, onChange, onSubmit, members}) {
+function ExpenseForm({formData, onChange, onSubmit, members, onSplitMemberChange}) {
   return (
     <form onSubmit={onSubmit}>
       <input
@@ -52,6 +52,21 @@ function ExpenseForm({formData, onChange, onSubmit, members}) {
           <option key={member.id} value={member.id}>{member.name}</option>
         ))}
       </select>
+
+      <fieldset>
+        <legend>Split with</legend>
+        {members.map((member) => (
+          <label key={member.id}>
+            <input
+              type="checkbox"
+              value={member.id}
+              checked={formData.split_member_ids.includes(member.id)}
+              onChange={onSplitMemberChange}
+            />
+            {member.name}
+          </label>
+        ))}
+      </fieldset>
 
       <input 
         type="date"

@@ -51,16 +51,16 @@ function ExpenseItem({
         )}
 
         <select
-          type="text"
           name="paid_by_member_id"
           value={editFormData.paid_by_member_id}
           onChange={onEditChange}
         >
           <option value="">Select member</option>
-          {members.map((member) => (
+          {(members || []).map((member) => (
             <option key={member.id} value={member.id}>{member.name}</option>
           ))}
-        </select>  
+        </select>
+
 
         <input
           type="date"
@@ -85,6 +85,12 @@ function ExpenseItem({
       <p>{currency} {Number(expense.amount).toFixed(2)}</p>
       {expense.category && <p>Category: {expense.category}</p>}
       {expense.paid_by_member_id && <p>Paid by: {expense.payer_name || "Unknown"}</p>}
+      <p>
+        Split with: {" "}
+        {expense.split_members && expense.split_members.length > 0 
+          ? expense.split_members.map((member) => member.name).join(", ")
+          : "No split members"}
+      </p>
       {expense.expense_date && (
         <p>Date: {expense.expense_date.slice(0, 10)}</p>
       )}

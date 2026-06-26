@@ -29,6 +29,7 @@ function TripDetailsPage() {
     handleEditExpenseChange,
     handleCancelEditExpense,
     handleEditExpense,
+    handleSplitMemberChange,
   } = useExpenses(id);
 
   const {
@@ -102,6 +103,7 @@ function TripDetailsPage() {
           onChange={handleExpenseChange}
           onSubmit={handleCreateExpense}
           members={members}
+          onSplitMemberChange={handleSplitMemberChange}
         />
 
         <ExpenseList
