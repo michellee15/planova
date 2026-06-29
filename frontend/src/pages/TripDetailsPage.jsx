@@ -11,6 +11,8 @@ import useExpenses from "../hooks/useExpenses";
 import MemberForm from "../components/members/MemberForm";
 import MemberList from "../components/members/MemberList";
 import useMembers from "../hooks/useMembers";
+import { calculateBalances, calculateSettlements } from "../utils/splitCalulcator";
+import SplitSummary from "../components/splits/SplitSummary";
 
 function TripDetailsPage() {
   const { id } = useParams();
@@ -74,6 +76,9 @@ function TripDetailsPage() {
     );
   }
 
+  const balances = calculateBalances(members, expenses);
+  const settlements = calculateSettlements(balances);
+
   return (
     <main>
       <Link to="/">Back to all trips</Link>
@@ -118,6 +123,12 @@ function TripDetailsPage() {
           onCancelEditExpense={handleCancelEditExpense}
           onDeleteExpense={handleDeleteExpense}
           onEditSplitMemberChange={handleSplitMemberChange}
+        />
+
+        <SplitSummary
+          balances={balances}
+          settlements={settlements}
+          currency={trip.currency}
         />
       </section>
 
