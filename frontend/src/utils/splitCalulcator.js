@@ -70,9 +70,9 @@ export function calculateSettlements(balances) {
     if (rounded > 0) {
       settlements.push({
         from_member_id: personWhoOwes.member_id,
-        from_name: personWhoOwes.name,
+        from_member_name: personWhoOwes.name,
         to_member_id: personToReceive.member_id,
-        to_name: personToReceive.name,
+        to_member_name: personToReceive.name,
         amount: rounded,
       });
     }

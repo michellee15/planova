@@ -14,7 +14,7 @@ function SplitSummary({balances, settlements, currency}) {
       ) : (
         settlements.map((settlement, index) => (
           <p key={index}>
-            {settlement.from_member_name} owes {settlement.to_member_name}{" "}
+            {settlement.from_member_name} owes {settlement.to_member_name} {" "}
             {currency} {settlement.amount.toFixed(2)}
           </p>
         ))
