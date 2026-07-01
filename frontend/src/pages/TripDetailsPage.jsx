@@ -11,14 +11,22 @@ import useExpenses from "../hooks/useExpenses";
 import MemberForm from "../components/members/MemberForm";
 import MemberList from "../components/members/MemberList";
 import useMembers from "../hooks/useMembers";
-import { calculateBalances, calculateSettlements } from "../utils/splitCalulcator";
 import SplitSummary from "../components/splits/SplitSummary";
+import useSettlements from "../hooks/useSettlements";
+import SettlementHistory from "../components/splits/SettlementHistory";
+
+import {
+  calculateBalances,
+  calculateSettlements,
+} from "../utils/splitCalculator";
 
 function TripDetailsPage() {
   const { id } = useParams();
+
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const {
     expenses,
     expenseFormData,
@@ -32,16 +40,28 @@ function TripDetailsPage() {
     handleCancelEditExpense,
     handleEditExpense,
     handleSplitMemberChange,
+    handleEditSplitMemberChange,
   } = useExpenses(id);
 
   const {
-    members, memberFormData, handleMemberChange, handleCreateMember, handleDeleteMember,
+    members,
+    memberFormData,
+    handleMemberChange,
+    handleCreateMember,
+    handleDeleteMember,
   } = useMembers(id);
+
+  const {
+    settlementPayments,
+    savingSettlement,
+    handleCreateSettlement,
+  } = useSettlements(id);
 
   useEffect(() => {
     const loadTripDetails = async () => {
       try {
         setLoading(true);
+        setError("");
 
         const data = await getTripById(id);
         setTrip(data);
@@ -53,10 +73,14 @@ function TripDetailsPage() {
       }
     };
 
-    loadTripDetails();
+    if (id) {
+      loadTripDetails();
+    }
   }, [id]);
 
-  if (loading) return <p>Loading trip...</p>;
+  if (loading) {
+    return <p>Loading trip...</p>;
+  }
 
   if (error) {
     return (
@@ -76,7 +100,7 @@ function TripDetailsPage() {
     );
   }
 
-  const balances = calculateBalances(members, expenses);
+  const balances = calculateBalances(members, expenses, settlementPayments);
   const settlements = calculateSettlements(balances);
 
   return (
@@ -89,11 +113,13 @@ function TripDetailsPage() {
 
       <section>
         <h2>Trip Members</h2>
-        <MemberForm 
+
+        <MemberForm
           memberFormData={memberFormData}
           handleMemberChange={handleMemberChange}
           handleCreateMember={handleCreateMember}
         />
+
         <MemberList
           members={members}
           handleDeleteMember={handleDeleteMember}
@@ -108,7 +134,7 @@ function TripDetailsPage() {
           onChange={handleExpenseChange}
           onSubmit={handleCreateExpense}
           members={members}
-          onEditSplitMemberChange={handleSplitMemberChange}
+          onSplitMemberChange={handleSplitMemberChange}
         />
 
         <ExpenseList
@@ -122,12 +148,19 @@ function TripDetailsPage() {
           onEditExpense={handleEditExpense}
           onCancelEditExpense={handleCancelEditExpense}
           onDeleteExpense={handleDeleteExpense}
-          onEditSplitMemberChange={handleSplitMemberChange}
+          onEditSplitMemberChange={handleEditSplitMemberChange}
         />
 
         <SplitSummary
           balances={balances}
           settlements={settlements}
+          currency={trip.currency}
+          onCreateSettlement={handleCreateSettlement}
+          savingSettlement={savingSettlement}
+        />
+
+        <SettlementHistory
+          settlementPayments={settlementPayments}
           currency={trip.currency}
         />
       </section>
