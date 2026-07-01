@@ -5,17 +5,15 @@ import { getTripById } from "../api/tripApi";
 import TripHeader from "../components/tripDetails/TripHeader";
 import TripOverview from "../components/tripDetails/TripOverview";
 import BudgetSummary from "../components/tripDetails/BudgetSummary";
-
 import ExpenseForm from "../components/expenses/ExpenseForm";
 import ExpenseList from "../components/expenses/ExpenseList";
 import useExpenses from "../hooks/useExpenses";
-
 import MemberForm from "../components/members/MemberForm";
 import MemberList from "../components/members/MemberList";
 import useMembers from "../hooks/useMembers";
-
 import SplitSummary from "../components/splits/SplitSummary";
 import useSettlements from "../hooks/useSettlements";
+import SettlementHistory from "../components/splits/SettlementHistory";
 
 import {
   calculateBalances,
@@ -102,12 +100,7 @@ function TripDetailsPage() {
     );
   }
 
-  const balances = calculateBalances(
-    members,
-    expenses,
-    settlementPayments
-  );
-
+  const balances = calculateBalances(members, expenses, settlementPayments);
   const settlements = calculateSettlements(balances);
 
   return (
@@ -164,6 +157,11 @@ function TripDetailsPage() {
           currency={trip.currency}
           onCreateSettlement={handleCreateSettlement}
           savingSettlement={savingSettlement}
+        />
+
+        <SettlementHistory
+          settlementPayments={settlementPayments}
+          currency={trip.currency}
         />
       </section>
 

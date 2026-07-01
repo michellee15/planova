@@ -3,8 +3,8 @@ const pool = require("../config/db");
 const getSettlementByTripId = async (tripId) => {
   const result = await pool.query(
     `SELECT sp.id,
-    sp.trip_id, sp.from_member_id, from_member.name AS from_name,
-    sp.to_member_id, to_member.name AS to_name,
+    sp.trip_id, sp.from_member_id, from_member.name AS from_member_name,
+    sp.to_member_id, to_member.name AS to_member_name,
     sp.amount, sp.paid_at
     FROM settlement_payments sp
     JOIN trip_members from_member ON sp.from_member_id = from_member.id

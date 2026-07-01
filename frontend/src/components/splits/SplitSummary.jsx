@@ -7,7 +7,7 @@ function SplitSummary({
 }) {
   return (
     <section>
-      <h2>Split Summary</h2>
+      <h2>Payment Summary</h2>
 
       <h3>Balances</h3>
       {balances.map((member) => (
@@ -16,7 +16,7 @@ function SplitSummary({
         </p>
       ))}
 
-      <h3>Summary</h3>
+      <h3>Split Summary</h3>
       {settlements.length === 0 ? (
         <p>Everyone is settled.</p>
       ) : (
