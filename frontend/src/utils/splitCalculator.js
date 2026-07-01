@@ -1,4 +1,4 @@
-export function calculateBalances(members, expenses) {
+export function calculateBalances(members, expenses, settlementPayments) {
   const balances = {};
   members.forEach((member) => {
     balances[Number(member.id)] = {
@@ -27,6 +27,14 @@ export function calculateBalances(members, expenses) {
       }
     });
   });
+  settlementPayments.forEach((payment) => {
+    const fromId = Number(payment.from_member_id);
+    const toId = Number(payment.to_member_id);
+    const amount = Number(payment.amount);
+    if (balances[fromId]) balances[fromId].paid += amount; //person who paid back becomes less negative
+    if (balances[toId]) balances[toId].owes += amount; //person who received back becomes less positive;
+  })
+
   Object.values(balances).forEach((memberBalance) => {
     memberBalance.balance = memberBalance.paid - memberBalance.owes;
   });
