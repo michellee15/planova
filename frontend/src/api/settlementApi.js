@@ -16,3 +16,11 @@ export const createSettlement = async (tripId, settlementData) => {
   if (!response.ok) throw new Error("Failed to create settlement");
   return response.json();
 };
+
+export const deleteSettlement = async (id) => {
+  const response = await fetch(`${API_URL}/settlements/${id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) throw new Error("Failed to delete settlement");
+  return response.json();
+};

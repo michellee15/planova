@@ -55,6 +55,7 @@ function TripDetailsPage() {
     settlementPayments,
     savingSettlement,
     handleCreateSettlement,
+    handleUndoSettlement,
   } = useSettlements(id);
 
   useEffect(() => {
@@ -162,6 +163,7 @@ function TripDetailsPage() {
         <SettlementHistory
           settlementPayments={settlementPayments}
           currency={trip.currency}
+          onUndoSettlement={handleUndoSettlement}
         />
       </section>
 
