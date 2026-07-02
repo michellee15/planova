@@ -135,7 +135,8 @@ function useExpenses(tripId) {
   const handleSplitMemberChange = (event) => {
     const memberId = Number(event.target.value);
     const checked = event.target.checked;
-    setEditExpenseFormData((prevData) => {
+  
+    setExpenseFormData((prevData) => {
       const currentSplitMembers = prevData.split_member_ids || [];
       if (checked) {
         return {
@@ -145,7 +146,21 @@ function useExpenses(tripId) {
       }
       return {
         ...prevData,
-        split_member_ids: currentSplitMembers.filter((id) => id !== memberId),
+        split_member_ids: currentSplitMembers.filter(
+          (id) => id !== memberId
+        ),
+      };
+    });
+  };
+
+  const handleEditSplitMemberChange = (event) => {
+    const memberId = Number(event.target.value);
+    const checked = event.target.checked;
+    setEditExpenseFormData((prevData) => {
+      const currentSplitMembers = prevData.split_member_ids || [];
+      return {
+        ...prevData, 
+        split_member_ids: checked ? [...currentSplitMembers, memberId] : currentSplitMembers.filter((id) => id !== memberId)
       };
     });
   };
@@ -153,7 +168,7 @@ function useExpenses(tripId) {
   return {
     expenses, expenseFormData, editingExpenseId, editExpenseFormData, loadExpenses, handleExpenseChange, 
     handleCreateExpense, handleEditExpense, handleEditExpenseChange, handleDeleteExpense, handleStartEditExpense, 
-    handleCancelEditExpense, handleSplitMemberChange
+    handleCancelEditExpense, handleSplitMemberChange, handleEditSplitMemberChange,
   };
 }
 

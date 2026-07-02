@@ -1,5 +1,5 @@
 //displays the add expense form
-function ExpenseForm({formData, onChange, onSubmit, members, onEditSplitMemberChange}) {
+function ExpenseForm({formData, onChange, onSubmit, members, onSplitMemberChange}) {
   return (
     <form onSubmit={onSubmit}>
       <input
@@ -61,7 +61,7 @@ function ExpenseForm({formData, onChange, onSubmit, members, onEditSplitMemberCh
               type="checkbox"
               value={member.id}
               checked={(formData.split_member_ids || []).includes(Number(member.id))}
-              onChange={onEditSplitMemberChange}
+              onChange={onSplitMemberChange}
             />
             {member.name}
           </label>
