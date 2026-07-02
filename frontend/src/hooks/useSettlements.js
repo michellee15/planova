@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSettlementByTripId, createSettlement } from "../api/settlementApi";
+import { getSettlementByTripId, createSettlement, deleteSettlement } from "../api/settlementApi";
 
 function useSettlements(tripId) {
   const [settlementPayments, setSettlementPayments] = useState([]);
@@ -37,11 +37,21 @@ function useSettlements(tripId) {
     }
   };
 
+  const handleUndoSettlement = async (id) => {
+    try {
+      await deleteSettlement(id);
+      await loadSettlements();
+    } catch (error) {
+      console.error("Error undoing settlement: ", error);
+    }
+  };
+
   return {
     settlementPayments,
     savingSettlement,
     loadSettlements,
     handleCreateSettlement,
+    handleUndoSettlement,
   };
 }
 

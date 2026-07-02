@@ -28,7 +28,20 @@ const createSettlement = async (req, res) => {
   }
 };
 
+const deleteSettlement = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedSettlement = await settlementModel.deleteSettlement(id);
+    if (!deletedSettlement) return res.status(404).json({ message: "Expense not found" });
+    res.json({ message: "Settlement deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting settlement: ", error);
+    res.status(500).json({message: "Internal server error"});
+  }
+};
+
 module.exports = {
   getSettlementByTripId,
   createSettlement,
+  deleteSettlement,
 };

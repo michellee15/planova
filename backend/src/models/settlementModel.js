@@ -28,7 +28,17 @@ const createSettlement = async (data) => {
   return result.rows[0];
 };
 
+const deleteSettlement = async (id) => {
+  const result = await pool.query(
+    `DELETE FROM settlement_payments
+     WHERE id = $1
+     RETURNING *`, [id]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   getSettlementByTripId,
   createSettlement,
+  deleteSettlement,
 }
