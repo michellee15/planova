@@ -55,7 +55,6 @@ export function calculateSettlements(balances) {
         amount: Math.abs(roundedBalance),
       });
     }
-
     if (roundedBalance > 0) {
       peopleToReceive.push({
         ...member,
