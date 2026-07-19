@@ -14,6 +14,9 @@ import useMembers from "../hooks/useMembers";
 import SplitSummary from "../components/splits/SplitSummary";
 import useSettlements from "../hooks/useSettlements";
 import SettlementHistory from "../components/splits/SettlementHistory";
+import useItinerary from "../hooks/useItineraries";
+import ItineraryForm from "../components/itineraries/ItineraryForm";
+import ItineraryList from "../components/itineraries/ItineraryList";
 
 import {
   calculateBalances,
@@ -57,6 +60,14 @@ function TripDetailsPage() {
     handleCreateSettlement,
     handleUndoSettlement,
   } = useSettlements(id);
+
+  const {
+    itineraries,
+    itineraryFormData,
+    handleItineraryChange,
+    handleCreateItinerary,
+    handleDeleteItinerary,
+  } = useItinerary(id);
 
   useEffect(() => {
     const loadTripDetails = async () => {
@@ -169,7 +180,16 @@ function TripDetailsPage() {
 
       <section>
         <h2>Itinerary</h2>
-        <p>No itinerary items yet.</p>
+        <ItineraryForm
+          itineraryFormData={itineraryFormData}
+          handleItineraryChange={handleItineraryChange}
+          handleCreateItinerary={handleCreateItinerary}
+        />
+
+        <ItineraryList
+          itineraries={itineraries}
+          handleDeleteItinerary={handleDeleteItinerary}
+        />
       </section>
     </main>
   );
