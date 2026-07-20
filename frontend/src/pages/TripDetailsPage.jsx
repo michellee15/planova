@@ -64,9 +64,15 @@ function TripDetailsPage() {
   const {
     itineraries,
     itineraryFormData,
+    editingItineraryId,
+    editItineraryFormData,
     handleItineraryChange,
     handleCreateItinerary,
     handleDeleteItinerary,
+    handleStartEditItinerary,
+    handleEditItineraryChange,
+    handleCancelEditItinerary,
+    handleEditItinerary,
   } = useItinerary(id);
 
   useEffect(() => {
@@ -188,8 +194,15 @@ function TripDetailsPage() {
 
         <ItineraryList
           itineraries={itineraries}
-          handleDeleteItinerary={handleDeleteItinerary}
+          editingItineraryId={editingItineraryId}
+          editFormData={editItineraryFormData}
+          onEditChange={handleEditItineraryChange}
+          onStartEditItinerary={handleStartEditItinerary}
+          onEditItinerary={handleEditItinerary}
+          onCancelEditItinerary={handleCancelEditItinerary}
+          onDeleteItinerary={handleDeleteItinerary}
         />
+        
       </section>
     </main>
   );

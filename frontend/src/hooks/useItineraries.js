@@ -11,6 +11,10 @@ function useItinerary(tripId) {
   const [itineraryFormData, setItineraryFormData] = useState({
     title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""
   });
+  const [editingItineraryId, setEditingItineraryId] = useState(null);  
+  const [editItineraryFormData, setEditItineraryFormData] = useState({
+    title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""
+  });  
 
   const loadItineraries = async () => {
     try {
@@ -68,8 +72,59 @@ function useItinerary(tripId) {
     }
   }
 
+  //function that saves edited data to backend 
+  const handleEditItineraryChange = (event) => {
+    const {name, value} = event.target;
+    setEditItineraryFormData((prevData) => ({
+      ...prevData, [name]: value,
+    }));
+  }
+
+  const handleEditItinerary = async (itineraryId) => {
+    if (!editItineraryFormData.title || !editItineraryFormData.itinerary_date) return;
+    try {
+      await updateItinerary(itineraryId, {
+        title: editItineraryFormData.title,
+        location: editItineraryFormData.location || null,
+        itinerary_date: editItineraryFormData.itinerary_date,
+        start_time: editItineraryFormData.start_time || null,
+        end_time: editItineraryFormData.end_time || null,
+        notes: editItineraryFormData.notes || null
+      });
+      await loadItineraries();
+      setEditingItineraryId(null);
+      setEditItineraryFormData({title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""})
+    } catch (error) {
+      console.error("Error updating itinerary: ", error);
+    }
+  }
+
+  const handleStartEditItinerary = async (itinerary) => {
+    try {
+      setEditingItineraryId(itinerary.id);
+      setEditItineraryFormData({
+        title: itinerary.title || "",
+        location: itinerary.location || "",
+        itinerary_date: itinerary.itinerary_date ? itinerary.itinerary_date.slice(0,10) : "",
+        start_time: itinerary.start_time || "",
+        end_time: itinerary.end_time || "",
+        notes: itinerary.notes || "",
+      });
+    } catch (error) {
+      console.error("Error updating itinerary: ", error);
+    }
+  }
+
+  const handleCancelEditItinerary= () => {
+    setEditingItineraryId(null);
+    setEditItineraryFormData({title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""});
+  }
+
+
   return {
-    itineraries, setItineraries, itineraryFormData, setItineraryFormData, loadItineraries, handleItineraryChange, handleCreateItinerary, handleDeleteItinerary,
+    itineraries, setItineraries, itineraryFormData, setItineraryFormData, editingItineraryId, setEditingItineraryId, editItineraryFormData, 
+    setEditItineraryFormData, loadItineraries, handleItineraryChange, handleCreateItinerary, handleDeleteItinerary, handleEditItineraryChange, 
+    handleEditItinerary, handleStartEditItinerary, handleCancelEditItinerary,
   }
 
 }

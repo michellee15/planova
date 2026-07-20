@@ -1,6 +1,6 @@
 import ItineraryItem from "./ItineraryItem";
 
-function ItineraryList({itineraries, handleDeleteItinerary}) {
+function ItineraryList({itineraries, editingItineraryId, editFormData, onEditChange, onStartEditItinerary, onEditItinerary, onCancelEditItinerary, onDeleteItinerary}) {
   if (itineraries.length === 0) {
     return <p>No itineraries yet.</p>
   }
@@ -10,7 +10,13 @@ function ItineraryList({itineraries, handleDeleteItinerary}) {
         <ItineraryItem
           key={itinerary.id}
           itinerary={itinerary}
-          handleDeleteItinerary={handleDeleteItinerary}
+          isEditing={String(editingItineraryId) === String(itinerary.id)}
+          editFormData={editFormData}
+          onEditChange={onEditChange}
+          onStartEditItinerary={onStartEditItinerary}
+          onEditItinerary={onEditItinerary}
+          onCancelEditItinerary={onCancelEditItinerary}
+          onDeleteItinerary={onDeleteItinerary}
         />
       ))}
     </div>
