@@ -20,7 +20,7 @@ const createMember = async (data) => {
 
 const deleteMember = async (id) => {
   const result = await pool.query(
-    `DELETE FROM trip_members WHERE id = $1 RETURNING *`,
+    `DELETE FROM trip_members WHERE id = $1 RETURNING trip_id`,
     [id]
   );
   return result.rows[0];
