@@ -23,7 +23,11 @@ const createItinerary = async(req, res) => {
       itinerary_date: itinerary_date || null,
       start_time: start_time || null,
       end_time: end_time || null,
-      notes,
+      notes: notes || null,
+      latitude: null,
+      longitude: null,
+      formatted_address: null,
+      place_id: null
     });
     res.status(201).json(newItinerary);
   } catch (error) {
@@ -35,7 +39,7 @@ const createItinerary = async(req, res) => {
 const updateItinerary = async (req, res) => {
   try {
     const {id} = req.params;
-    const {title, location, itinerary_date, start_time, end_time, notes} = req.body;
+    const {title, location, itinerary_date, start_time, end_time, notes } = req.body;
     if (!title || !itinerary_date) return res.status(400).json({message: "Title and itinerary date are required"});
     const updatedItinerary = await itineraryModel.updateItinerary(id, {
       title,
@@ -43,7 +47,11 @@ const updateItinerary = async (req, res) => {
       itinerary_date: itinerary_date || null,
       start_time: start_time || null,
       end_time: end_time|| null,
-      notes,  
+      notes: notes || null,
+      latitude: null,
+      longitude: null,
+      formatted_address: null,
+      place_id: null
     });
     if (!updatedItinerary) return res.status(404).json({message: "Itinerary not found"});
     res.json(updatedItinerary);
