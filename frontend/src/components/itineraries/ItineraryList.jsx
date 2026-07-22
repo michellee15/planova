@@ -2,10 +2,10 @@ import ItineraryItem from "./ItineraryItem";
 
 function ItineraryList({itineraries, editingItineraryId, editFormData, onEditChange, onStartEditItinerary, onEditItinerary, onCancelEditItinerary, onDeleteItinerary}) {
   if (itineraries.length === 0) {
-    return <p>No itineraries yet.</p>
+    return <p className="empty-state">No itineraries yet.</p>
   }
   return (
-    <div>
+    <div className="itinerary-timeline">
       {itineraries.map((itinerary) => (
         <ItineraryItem
           key={itinerary.id}

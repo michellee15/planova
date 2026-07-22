@@ -129,8 +129,8 @@ function TripDetailsPage() {
       <TripOverview trip={trip} />
       <BudgetSummary trip={trip} expenses={expenses} />
 
-      <section>
-        <h2>Trip Members</h2>
+      <section className="section-card">
+        <h2 className="section-header h2">Trip Members</h2>
 
         <MemberForm
           memberFormData={memberFormData}
@@ -144,8 +144,8 @@ function TripDetailsPage() {
         />
       </section>
 
-      <section>
-        <h2>Expenses</h2>
+      <section className="section-card">
+        <h2 className="section-header h2">Expenses</h2>
 
         <ExpenseForm
           formData={expenseFormData}
@@ -184,14 +184,17 @@ function TripDetailsPage() {
         />
       </section>
 
-      <section>
-        <h2>Itinerary</h2>
+      <section className="section-card">
+        <div className="section-header">
+          <h2>Itinerary</h2>
+        </div>
+ 
         <ItineraryForm
           itineraryFormData={itineraryFormData}
           handleItineraryChange={handleItineraryChange}
           handleCreateItinerary={handleCreateItinerary}
         />
-
+ 
         <ItineraryList
           itineraries={itineraries}
           editingItineraryId={editingItineraryId}
@@ -202,7 +205,6 @@ function TripDetailsPage() {
           onCancelEditItinerary={handleCancelEditItinerary}
           onDeleteItinerary={handleDeleteItinerary}
         />
-        
       </section>
     </main>
   );

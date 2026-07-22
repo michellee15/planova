@@ -75,7 +75,7 @@ const updateTrip = async(id, tripData) => {
       currency = $6,
       num_of_people = $7
      WHERE id = $8
-     RETURNING 8`,
+     RETURNING *`,
     [ title, destination, start_date, end_date, total_budget, currency, num_of_people, id,]
   );
 
@@ -91,4 +91,20 @@ const deleteTrip = async (id) => {
   return result.rows[0];
 };
 
-module.exports = {getAllTrips, getTripById, createTrip, updateTrip, deleteTrip,};
+const updateTripPeopleCount = async (tripId) => {
+  const result = await pool.query(
+    `UPDATE trips
+     SET num_of_people = (
+      SELECT COUNT(*)
+      FROM trip_members
+      WHERE trip_id = $1
+     )
+     WHERE id = $1
+     RETURNING *`,
+    [tripId]
+  );
+  return result.rows[0];
+};
+
+
+module.exports = {getAllTrips, getTripById, createTrip, updateTrip, deleteTrip, updateTripPeopleCount};

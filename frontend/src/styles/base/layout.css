@@ -1,0 +1,11 @@
+/* App background layout */
+.app {
+  min-height: 100vh;
+  padding: 2rem;
+  background: var(--bg);
+}
+
+.app-shell {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+}
