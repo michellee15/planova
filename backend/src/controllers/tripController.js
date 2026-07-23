@@ -26,12 +26,13 @@ const getTrip = async (req, res) => {
 
 const createTrip = async (req, res) => {
   try {
-    const { title, destination, start_date, end_date, total_budget, currency, num_of_people,} = req.body;
+    const { user_id, title, destination, start_date, end_date, total_budget, currency, num_of_people,} = req.body;
     if (!title || !destination) {
       return res.status(400).json({message: "Title and destination are required",});
     }
 
     const newTrip = await tripModel.createTrip({
+      user_id: req.user.id,
       title, 
       destination, 
       start_date, 

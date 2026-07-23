@@ -37,6 +37,7 @@ const getTripById = async (id) => {
 
 const createTrip = async(tripData) => {
   const {
+    user_id,
     title,
     destination,
     start_date,
@@ -48,12 +49,12 @@ const createTrip = async(tripData) => {
 
   const result = await pool.query(
     `INSERT INTO trips
-      (title, destination, start_date, end_date, total_budget, currency, num_of_people)
+      (user_id, title, destination, start_date, end_date, total_budget, currency, num_of_people)
     VALUES
-      ($1, $2, $3, $4, $5, $6, $7)
+      ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *`,
     [
-      title, destination, start_date, end_date, total_budget, currency, num_of_people
+      user_id, title, destination, start_date, end_date, total_budget, currency, num_of_people
     ]
   );
 
