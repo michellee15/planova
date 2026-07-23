@@ -1,4 +1,5 @@
 const express = require("express");
+const requireAuth = require("../middleware/requireAuthentication");
 
 const {
   getTrips,
@@ -10,10 +11,10 @@ const {
 
 const router = express.Router();
 
-router.get("/", getTrips);
-router.get("/:id", getTrip);
-router.post("/", createTrip);
-router.put("/:id", updateTrip);
-router.delete("/:id", deleteTrip);
+router.get("/", requireAuth, getTrips);
+router.get("/:id", requireAuth, getTrip);
+router.post("/", requireAuth, createTrip);
+router.put("/:id", requireAuth, updateTrip);
+router.delete("/:id", requireAuth, deleteTrip);
 
 module.exports = router;

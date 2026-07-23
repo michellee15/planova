@@ -1,7 +1,8 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
 
+const authRoutes = require("./routes/authenticationRoutes");
 const tripRoutes = require("./routes/tripRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const memberRoutes = require("./routes/memberRoutes");
@@ -17,6 +18,7 @@ app.get("/", (req, res) => {
   res.send("Planova API is running");
 });
 
+app.use("/api/auth", authRoutes);
 app.use("/api/trips", tripRoutes);
 app.use("/api", expenseRoutes);
 app.use("/api", memberRoutes);

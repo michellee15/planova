@@ -2,7 +2,8 @@ const tripModel = require("../models/tripModel");
 
 const getTrips = async (req, res) => {
   try {
-    const trips = await tripModel.getAllTrips();
+    const userId = req.user.id;
+    const trips = await tripModel.getAllTrips(userId);
     res.status(200).json(trips);
   } catch (error) {
     console.error("Error getting trips: ", error);
@@ -12,8 +13,9 @@ const getTrips = async (req, res) => {
 
 const getTrip = async (req, res) => {
   try {
-    const { id } = req.params;
-    const trip = await tripModel.getTripById(id);
+    const {id} = req.params;
+    const userId = req.user.id;
+    const trip = await tripModel.getTripById(id, userId);
     if (!trip) {
       return res.status(404).json({message: "Trip not found"});
     }
@@ -32,6 +34,7 @@ const createTrip = async (req, res) => {
     }
 
     const newTrip = await tripModel.createTrip({
+      user_id: req.user.id,
       title, 
       destination, 
       start_date, 
@@ -50,7 +53,8 @@ const createTrip = async (req, res) => {
 const updateTrip = async (req, res) => {
   try {
     const {id} = req.params;
-    const updatedTrip = await tripModel.updateTrip(id, req.body);
+    const userId = req.user.id;
+    const updatedTrip = await tripModel.updateTrip(id, userId, req.body);
     if (!updatedTrip) {
       return res.status(404).json({message: "Trip not found"});
     }
@@ -64,7 +68,8 @@ const updateTrip = async (req, res) => {
 const deleteTrip = async (req, res) => {
   try {
     const {id} = req.params;
-    const deletedTrip = await tripModel.deleteTrip(id);
+    const userId = req.user.id;
+    const deletedTrip = await tripModel.deleteTrip(id, userId);
     if (!deletedTrip) {
       return res.status(404).json({message: "Trip not found"});
     }
