@@ -4,26 +4,35 @@ import axios from "axios";
 const API_URL = "http://localhost:5000/api/trips";
 
 export const getTrips = async () => {
-  const response = await axios.get(API_URL);
+  const response = await axios.get(API_URL, {headers: getAuthHeaders(),});
   return response.data;
 };
 
 export const getTripById = async (id) => {
-  const response = await axios.get(`${API_URL}/${id}`);
+  const response = await axios.get(`${API_URL}/${id}`,  {headers: getAuthHeaders(),});
   return response.data;
 };
 
 export const createTrip = async (tripData) => {
-  const response = await axios.post(API_URL, tripData);
+  const response = await axios.post(API_URL, tripData, {headers: getAuthHeaders(),});
   return response.data;
 };
 
 export const updateTrip = async (id, tripData) => {
-  const response = await axios.put(`${API_URL}/${id}`, tripData);
+  const response = await axios.put(`${API_URL}/${id}`, tripData, {headers: getAuthHeaders(),});
   return response.data;
 };
 
 export const deleteTrip = async (id) => {
-  const response = await axios.delete(`${API_URL}/${id}`);
+  const response = await axios.delete(`${API_URL}/${id}`, {headers: getAuthHeaders(),});
   return response.data;
 }
+
+//every protected trip request needs header 
+export const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  }
+};
