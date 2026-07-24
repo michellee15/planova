@@ -19,6 +19,7 @@ const createMember = async (req, res) => {
     const {name} = req.body;
     if (!name) return res.status(400).json({message: "Member name is required."});
     const newMember = await memberModel.createMember({user_id: req.user.id, trip_id: tripId, name,});
+    if (!newMember) return res.status(404).json({message: "Trip not found"});
     await tripModel.updateTripPeopleCount(tripId);
     res.status(201).json(newMember);
   } catch (error) {

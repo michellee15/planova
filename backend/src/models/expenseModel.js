@@ -49,7 +49,7 @@ const createExpense = async (expenseData) => {
     `INSERT INTO expenses 
       (trip_id, title, amount, category, paid_by_member_id, expense_date)
      VALUES 
-      ($1, $2, $3, $4, $5, $6, $7)
+      ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
     [trip_id, title, amount, category, paid_by_member_id, expense_date]
   );
@@ -100,7 +100,7 @@ const deleteExpense = async (id,  user_id) => {
      USING trips t
      WHERE e.trip_id = t.id
       AND e.id = $1
-      AND user_id = $2
+      AND t.user_id = $2
      RETURNING e.*`,
     [id, user_id]
   );
