@@ -2,8 +2,9 @@ const itineraryModel = require("../models/itineraryModel");
 
 const getItineraryByTripId = async (req, res) => {
   try {
+    const userId = req.user.id;
     const {tripId} = req.params;
-    const itineraries = await itineraryModel.getItineraryByTripId(tripId);
+    const itineraries = await itineraryModel.getItineraryByTripId(tripId, userId);
     res.json(itineraries);
   } catch (error) {
     console.error("Error getting itinerary: ", error);
@@ -17,9 +18,10 @@ const createItinerary = async(req, res) => {
     const {title, location, itinerary_date, start_time, end_time, notes} = req.body;
     if (!title || !itinerary_date) return res.status(400).json({message: "Title and itinerary date are required"});
     const newItinerary = await itineraryModel.createItinerary({
+      user_id: req.user.id,
       trip_id: tripId,
       title,
-      location,
+      location: location || null,
       itinerary_date: itinerary_date || null,
       start_time: start_time || null,
       end_time: end_time || null,
@@ -29,6 +31,7 @@ const createItinerary = async(req, res) => {
       formatted_address: null,
       place_id: null
     });
+    if (!newItinerary) return res.status(404).json({message: "Trip not found"});
     res.status(201).json(newItinerary);
   } catch (error) {
     console.error("Error creating itinerary: ", error);
@@ -38,10 +41,11 @@ const createItinerary = async(req, res) => {
 
 const updateItinerary = async (req, res) => {
   try {
+    const userId = req.user.id;
     const {id} = req.params;
     const {title, location, itinerary_date, start_time, end_time, notes } = req.body;
     if (!title || !itinerary_date) return res.status(400).json({message: "Title and itinerary date are required"});
-    const updatedItinerary = await itineraryModel.updateItinerary(id, {
+    const updatedItinerary = await itineraryModel.updateItinerary(id, userId, {
       title,
       location,
       itinerary_date: itinerary_date || null,
@@ -63,8 +67,9 @@ const updateItinerary = async (req, res) => {
 
 const deleteItinerary = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { id } = req.params;
-    const deletedItinerary = await itineraryModel.deleteItinerary(id);
+    const deletedItinerary = await itineraryModel.deleteItinerary(id, userId);
     if (!deletedItinerary) return res.status(404).json({message: "Itinerary not found"});
     res.json({message: "Itinerary deleted successfully"});
   } catch (error) {
