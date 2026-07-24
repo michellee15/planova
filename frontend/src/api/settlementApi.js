@@ -1,3 +1,5 @@
+import {getAuthHeaders} from "./authenticationHeader";
+
 const API_URL = "http://localhost:5000/api";
 
 export const getSettlementByTripId = async (tripId) => {
@@ -22,12 +24,4 @@ export const deleteSettlement = async (id) => {
   });
   if (!response.ok) throw new Error("Failed to delete settlement");
   return response.json();
-};
-
-export const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  }
 };

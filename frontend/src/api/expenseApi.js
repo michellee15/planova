@@ -1,3 +1,4 @@
+import {getAuthHeaders} from "./authenticationHeader";
 const API_URL = "http://localhost:5000/api";
 
 export const getExpensesByTripId = async (tripId) => {
@@ -28,13 +29,4 @@ export const deleteExpense = async (expenseId) => {
   });
   if (!response.ok) throw new Error("Failed to delete expense");
   return response.json();
-}
-
-//every protected expense request needs header 
-export const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  }
 };
