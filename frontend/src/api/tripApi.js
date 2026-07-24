@@ -1,5 +1,6 @@
 // axios library act as bridge so that react frontend can send http req to backend api
 import axios from "axios";
+import {getAuthHeaders} from "./authenticationHeader";
 
 const API_URL = "http://localhost:5000/api/trips";
 
@@ -26,13 +27,4 @@ export const updateTrip = async (id, tripData) => {
 export const deleteTrip = async (id) => {
   const response = await axios.delete(`${API_URL}/${id}`, {headers: getAuthHeaders(),});
   return response.data;
-}
-
-//every protected trip request needs header 
-export const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  }
 };

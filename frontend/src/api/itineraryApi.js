@@ -1,3 +1,5 @@
+import {getAuthHeaders} from "./authenticationHeader";
+
 const API_URL = "http://localhost:5000/api";
 
 export const getItineraryByTripId = async (tripId) => {
@@ -26,12 +28,4 @@ export const deleteItinerary = async (id) => {
   const response = await fetch (`${API_URL}/itinerary/${id}`, {method: "DELETE", headers: getAuthHeaders()})
   if (!response.ok) throw new Error("Failed to delete itinerary");
   return response.json();
-};
-
-export const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  }
 };
