@@ -1,7 +1,7 @@
 import {Link} from "react-router-dom";
 import {useEffect, useState} from "react";
+import UserMenu from "../components/users/UserMenu";
 import {createTrip, deleteTrip, updateTrip, getTrips} from "../api/tripApi";
-import useAuthentication from "../hooks/useAuthentication";
 
 function TripsPage() {
   const [trips, setTrips] = useState([]);
@@ -13,7 +13,6 @@ function TripsPage() {
   const [editFormData, setEditFormData] = useState({
     title: "", destination: "", start_date: "", end_date: "", currency: "SGD", num_of_people: 1,
   });
-  const { handleLogOut } = useAuthentication();
 
   const loadTrips = async () => {
     try {
@@ -104,9 +103,13 @@ function TripsPage() {
 
   return (
     <main>
-      <h1>Planova</h1>
-      <h2>My Trips</h2>
-      <button type="button" onClick={handleLogOut}>Logout</button>
+      <header className="page-header">
+        <div>
+          <h1>Planova</h1>
+          <h2>My Trips</h2>
+        </div>
+        <UserMenu />
+      </header>
 
       <form onSubmit={handleSubmit}>
         <input 
