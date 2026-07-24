@@ -76,9 +76,20 @@ function useAuthentication() {
     }));
   };
 
+  const handleLogOut = () => {
+    const confirmation = window.confirm("Are you sure you want to log out?");
+    if (!confirmation) return;
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setTimeout(() => {
+      navigate("/login");
+    }, 1000);
+  };
+
   return { 
     loginFormData, setLoginFormData, registerFormData, setRegisterFormData, error, loading,
-    success, setSuccess, handleLogin, handleLoginChange, handleRegister, handleRegisterChange
+    success, setSuccess, handleLogin, handleLoginChange, handleRegister, handleRegisterChange, 
+    handleLogOut
   };
 }
 
