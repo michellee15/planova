@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useLocation } from "react-router-dom";
 import {registerUser, loginUser} from "../api/authenticationApi";
 
 function useAuthentication() {
@@ -9,6 +9,8 @@ function useAuthentication() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
   const handleLogin = async(event) => {
     event.preventDefault();
@@ -25,7 +27,7 @@ function useAuthentication() {
       localStorage.setItem("user", JSON.stringify(data.user));
       setSuccess("Login successful!");
       setTimeout(() => {
-        navigate("/");
+        navigate(from, {replace: true});
       }, 1000);
     } catch (error) {
       console.error("Error logging in: ", error);
