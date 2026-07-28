@@ -8,6 +8,7 @@ const expenseRoutes = require("./routes/expenseRoutes");
 const memberRoutes = require("./routes/memberRoutes");
 const settlementRoutes = require("./routes/settlementRoutes");
 const itineraryRoutes = require("./routes/itineraryRoutes");
+const routeRoutes =  require("./routes/routeRoutes");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api", expenseRoutes);
 app.use("/api", memberRoutes);
 app.use("/api", settlementRoutes);
 app.use("/api", itineraryRoutes);
+app.use("/api", routeRoutes);
 
 const PORT = process.env.PORT || 5000;
 

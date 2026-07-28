@@ -1,4 +1,7 @@
 import{useState, useEffect} from "react";
+import useCurrentLocation from "../hooks/useCurrentLocation";
+import { calculateDistanceInKm } from "../utils/distanceUtils";
+import { getTravelTimes } from "../api/routeApi";
 import {
   getItineraryByTripId,
   createItinerary,
@@ -6,7 +9,8 @@ import {
   deleteItinerary,
 } from "../api/itineraryApi";
 
-function useItinerary(tripId) {
+function useItineraries(tripId) {
+
   const [itineraries, setItineraries] = useState([]);
   const [itineraryFormData, setItineraryFormData] = useState({
     title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""
@@ -14,7 +18,18 @@ function useItinerary(tripId) {
   const [editingItineraryId, setEditingItineraryId] = useState(null);  
   const [editItineraryFormData, setEditItineraryFormData] = useState({
     title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""
-  });  
+  }); 
+
+  const [nearestTravelTimes, setNearestTravelTimes] = useState(null);
+  const [travelTimesLoading, setTravelTimesLoading] = useState(false);
+  const [travelTimesError, setTravelTimesError] = useState("");
+  const [nearestItinerary, setNearestItinerary] = useState(null);
+  const {
+    currentLocation,
+    locationLoading,
+    locationError,
+    getCurrentLocation,
+  } = useCurrentLocation();
 
   const loadItineraries = async () => {
     try {
@@ -22,7 +37,7 @@ function useItinerary(tripId) {
       if (Array.isArray(itineraryData)) {
         setItineraries(itineraryData);
       } else {
-        console.error("Iitnerary data is not in array: ", error);
+        console.error("Iitnerary data is not an array: ", itineraryData);
         setItineraries([]);
       }
     } catch (error){
@@ -32,8 +47,64 @@ function useItinerary(tripId) {
   };
 
   useEffect(() => {
-    if (tripId) loadItineraries()
+    if (tripId) loadItineraries();
   }, [tripId]);
+
+  useEffect(() => {
+    if (!currentLocation) return;
+  
+    const itineraryWithCoord = itineraries.filter((item) => {
+      return item.latitude && item.longitude;
+    });
+  
+    if (itineraryWithCoord.length === 0) {
+      setNearestItinerary(null);
+      setNearestTravelTimes(null);
+      return;
+    }
+    const itemsWithDistance = itineraryWithCoord.map((item) => {
+      const distance = calculateDistanceInKm(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        Number(item.latitude),
+        Number(item.longitude)
+      );
+  
+      return {
+        ...item,
+        distance,
+      };
+    });
+  
+    const nearest = itemsWithDistance.sort((a, b) => a.distance - b.distance)[0];
+    setNearestItinerary(nearest);
+  
+    const loadTravelTimes = async () => {
+      try {
+        setTravelTimesLoading(true);
+        setTravelTimesError("");
+        setNearestTravelTimes(null);
+        const travelTimes = await getTravelTimes({
+          origin: {
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+          },
+          destination: {
+            latitude: Number(nearest.latitude),
+            longitude: Number(nearest.longitude),
+          },
+        });
+        setNearestTravelTimes(travelTimes);
+      } catch (error) {
+        console.error("Error loading travel times: ", error);
+        setTravelTimesError("Failed to load travel times");
+      } finally {
+        setTravelTimesLoading(false);
+      }
+    };
+  
+    loadTravelTimes();
+  }, [currentLocation, itineraries]);
 
   const handleItineraryChange = (event) => {
     const {name, value} = event.target;
@@ -120,13 +191,16 @@ function useItinerary(tripId) {
     setEditItineraryFormData({title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""});
   }
 
+  const handleFindNearestItinerary = () => {
+    getCurrentLocation();
+  }
 
   return {
     itineraries, setItineraries, itineraryFormData, setItineraryFormData, editingItineraryId, setEditingItineraryId, editItineraryFormData, 
     setEditItineraryFormData, loadItineraries, handleItineraryChange, handleCreateItinerary, handleDeleteItinerary, handleEditItineraryChange, 
-    handleEditItinerary, handleStartEditItinerary, handleCancelEditItinerary,
-  }
-
+    handleEditItinerary, handleStartEditItinerary, handleCancelEditItinerary, handleFindNearestItinerary, nearestItinerary, locationLoading, 
+    locationError, nearestTravelTimes, travelTimesLoading, travelTimesError,
+  };
 }
 
-export default useItinerary;
+export default useItineraries;

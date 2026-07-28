@@ -14,7 +14,7 @@ import useMembers from "../hooks/useMembers";
 import SplitSummary from "../components/splits/SplitSummary";
 import useSettlements from "../hooks/useSettlements";
 import SettlementHistory from "../components/splits/SettlementHistory";
-import useItinerary from "../hooks/useItineraries";
+import useItineraries from "../hooks/useItineraries";
 import ItineraryForm from "../components/itineraries/ItineraryForm";
 import ItineraryList from "../components/itineraries/ItineraryList";
 
@@ -73,7 +73,14 @@ function TripDetailsPage() {
     handleEditItineraryChange,
     handleCancelEditItinerary,
     handleEditItinerary,
-  } = useItinerary(id);
+    handleFindNearestItinerary,
+    nearestItinerary,
+    locationLoading,
+    locationError,
+    nearestTravelTimes,
+    travelTimesLoading,
+    travelTimesError,
+  } = useItineraries(id);
 
   useEffect(() => {
     const loadTripDetails = async () => {
@@ -204,6 +211,13 @@ function TripDetailsPage() {
           onEditItinerary={handleEditItinerary}
           onCancelEditItinerary={handleCancelEditItinerary}
           onDeleteItinerary={handleDeleteItinerary}
+          nearestItinerary={nearestItinerary}
+          locationLoading={locationLoading}
+          locationError={locationError}
+          onFindNearestItinerary={handleFindNearestItinerary}
+          nearestTravelTimes={nearestTravelTimes}
+          travelTimesLoading={travelTimesLoading}
+          travelTimesError={travelTimesError}
         />
       </section>
     </main>
