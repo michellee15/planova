@@ -82,9 +82,62 @@ const deleteItinerary = async (id, user_id) => {
   return result.rows[0];
 };
 
+const createItineraryBatch = async ({ user_id, trip_id, items }) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const tripCheck = await client.query(
+      `SELECT id
+       FROM trips
+       WHERE id = $1
+        AND user_id = $2
+       FOR UPDATE`,
+      [trip_id, user_id]
+    );
+    if (tripCheck.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    const createdItems = [];
+    for (const item of items) {
+      const result = await client.query(
+        `INSERT INTO itinerary_items
+         (trip_id, title, location, itinerary_date, start_time, end_time, notes, latitude, longitude, formatted_address, place_id)
+         VALUES
+         ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         RETURNING *`,
+        [
+          trip_id,
+          item.title,
+          item.location,
+          item.itinerary_date,
+          item.start_time,
+          item.end_time,
+          item.notes,
+          item.latitude,
+          item.longitude,
+          item.formatted_address,
+          item.place_id,
+        ]
+      );
+      createdItems.push(result.rows[0]);
+    }
+
+    await client.query("COMMIT");
+    return createdItems;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getItineraryByTripId,
   createItinerary,
+  createItineraryBatch,
   updateItinerary,
   deleteItinerary,
 };

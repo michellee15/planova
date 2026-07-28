@@ -50,6 +50,90 @@ const createItinerary = async(req, res) => {
   }
 };
 
+const createItineraryBatch = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+    const { items } = req.body;
+    if (!Array.isArray(items) || items.length === 0 || items.length > 20) {
+      return res
+        .status(400)
+        .json({ message: "Items must contain between 1 and 20 itinerary entries" });
+    }
+
+    const normalizedItems = [];
+    for (const item of items) {
+      if (
+        !item ||
+        typeof item.title !== "string" ||
+        item.title.trim().length === 0 ||
+        item.title.length > 200 ||
+        typeof item.itinerary_date !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(item.itinerary_date)
+      ) {
+        return res.status(400).json({
+          message:
+            "Every item requires a title of 200 characters or fewer and an itinerary date",
+        });
+      }
+      if (
+        (item.start_time &&
+          !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.start_time)) ||
+        (item.end_time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.end_time))
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Start and end times must use HH:MM format" });
+      }
+
+      const latitude =
+        item.latitude === undefined || item.latitude === null
+          ? null
+          : Number(item.latitude);
+      const longitude =
+        item.longitude === undefined || item.longitude === null
+          ? null
+          : Number(item.longitude);
+      if (
+        (latitude !== null &&
+          (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
+        (longitude !== null &&
+          (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))
+      ) {
+        return res.status(400).json({ message: "Item coordinates are invalid" });
+      }
+
+      normalizedItems.push({
+        title: item.title.trim(),
+        location:
+          typeof item.location === "string" ? item.location.trim() || null : null,
+        itinerary_date: item.itinerary_date,
+        start_time: item.start_time || null,
+        end_time: item.end_time || null,
+        notes: typeof item.notes === "string" ? item.notes : null,
+        latitude,
+        longitude,
+        formatted_address:
+          typeof item.formatted_address === "string"
+            ? item.formatted_address
+            : null,
+        place_id:
+          typeof item.place_id === "string" ? item.place_id.slice(0, 255) : null,
+      });
+    }
+
+    const createdItems = await itineraryModel.createItineraryBatch({
+      user_id: req.user.id,
+      trip_id: tripId,
+      items: normalizedItems,
+    });
+    if (!createdItems) return res.status(404).json({ message: "Trip not found" });
+    res.status(201).json(createdItems);
+  } catch (error) {
+    console.error("Error creating itinerary batch:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 const updateItinerary = async (req, res) => {
   try {
     let geocodedLoc = null;
@@ -100,6 +184,7 @@ const deleteItinerary = async (req, res) => {
 module.exports = {
   getItineraryByTripId,
   createItinerary,
+  createItineraryBatch,
   updateItinerary,
   deleteItinerary,
 };

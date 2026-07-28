@@ -1,18 +1,18 @@
 // this code is guided by ChatGPT 
 // to convert normal text/string location that user typed in to real address in map
-const fetch = require("node-fetch");
+const { fetchWithTimeout } = require("./httpService");
 
 const geocodeLocation = async (location) => { 
   if (!location) return null;
-  const url = new URL("https://nominatim.openstreetmap.org/search")
+  const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.append("q", location);
   url.searchParams.append("format", "json"); 
   url.searchParams.append("limit", 1); //limit the result to only 1 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithTimeout(url.toString(), {
     headers: {
-      "User-Agent": "Planova/1.0 student-project", //to send the request to external API 
+      "User-Agent": "Planova/1.0 student-project", //to send the request to external API
     },
-  });
+  }, 10000);
 
   if (!response.ok) throw new Error("Failed to geocode location");
   const data = await response.json();
