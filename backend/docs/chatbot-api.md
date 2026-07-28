@@ -1,11 +1,14 @@
 # Chatbot API
 
 The chatbot discovers real nearby OpenStreetMap places, adds route estimates, and
-uses Gemini to rank the candidates or arrange them into a four-hour plan.
+uses Gemini to rank the candidates or arrange them into a four-hour plan. Place
+search is selected from the prompt and supports attractions, food, groceries,
+shopping, nightlife, accommodation, nature, entertainment, healthcare, everyday
+services, transport, education, worship, fitness, and personal care.
 
 ## Setup
 
-1. Apply `db/migrations/001_add_chat_tables.sql` to the Planova PostgreSQL database.
+1. Run `npm run migrate` to apply the SQL migrations to the Planova PostgreSQL database.
 2. Copy the chatbot settings from `.env.example` into the local `.env`.
 3. Set `GEMINI_API_KEY` to a free Google AI Studio key.
 4. Start the backend with `npm run dev`.
@@ -81,9 +84,10 @@ between 0.5 and 25 km. When coordinates are missing, use:
 ```
 
 The assistant response is stored in `response_data`. Place identity, coordinates,
-opening hours, and sourced prices come from OpenStreetMap. Gemini may provide
-price ranges only when they are labelled `estimated`. Each travel mode includes
-an accuracy label.
+opening hours, and sourced prices come from OpenStreetMap. Gemini may estimate
+admission prices or typical per-person dining spend only when labelled
+`estimated`; categories without a meaningful single price return `unavailable`.
+Each travel mode includes an accuracy label.
 
 Discovery requests degrade to nearest-place results when Gemini is temporarily
 unavailable. Planning requests return a service error because an ordered schedule

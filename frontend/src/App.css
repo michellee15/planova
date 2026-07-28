@@ -3,6 +3,7 @@
 @import './styles/components/forms.css';
 @import './styles/components/buttons.css';
 @import './styles/features/itinerary.css';
+@import './styles/features/chatbot.css';
 @import './styles/features/trip-overview.css';
 @import './styles/pages/trips-page.css';
 @import "./styles/pages/trip-details-page.css";
