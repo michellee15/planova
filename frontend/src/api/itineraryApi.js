@@ -16,6 +16,19 @@ export const createItinerary = async (tripId, itineraryData) =>{
   return response.json();
 };
 
+export const createItineraryBatch = async (tripId, items) => {
+  const response = await fetch(`${API_URL}/trips/${tripId}/itinerary/batch`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ items }),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(data?.message || "Failed to add recommendations to itinerary");
+  }
+  return data;
+};
+
 export const updateItinerary = async (id, itineraryData) => {
   const response = await fetch (`${API_URL}/itinerary/${id}`, {
     method: "PUT", headers: getAuthHeaders(), body: JSON.stringify(itineraryData),

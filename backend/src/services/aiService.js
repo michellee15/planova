@@ -107,7 +107,10 @@ const buildPrompt = ({
     "Use HH:MM 24-hour startTime and endTime values for plan items.",
     "Use null times and planDate for discover mode.",
     "When a supplied ticketPrice exists, preserve it as sourced.",
-    "Otherwise estimate a realistic ticket-price range and mark it estimated.",
+    "For attractions, estimate admission when a sourced ticket price is unavailable.",
+    "For restaurants and cafes, estimate a typical per-person spend.",
+    "For retail, groceries, transport, health, and services, mark price unavailable unless the user asks about a specific priced item.",
+    "Mark every model-generated price as estimated.",
     "Every estimated price must explain that users should verify the official price.",
     "Do not claim opening hours that were not supplied.",
     JSON.stringify({
@@ -173,7 +176,7 @@ const generateRecommendations = async (input) => {
       parts: [
         {
           text:
-            "You are Planova's travel-planning assistant. Ground every factual place field in supplied data and clearly label estimates.",
+            "You are Planova's nearby-place and travel-planning assistant. Ground every factual place field in supplied data and clearly label estimates.",
         },
       ],
     },

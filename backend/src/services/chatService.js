@@ -266,7 +266,7 @@ const buildDiscoveryFallback = ({ candidates, trip }) => ({
     phone: candidate.phone,
     wheelchair: candidate.wheelchair,
     source: candidate.source,
-    reason: "Nearby based on your current location.",
+    reason: "Nearby based on your current location and requested place type.",
     estimatedVisitMinutes: 60,
     startTime: null,
     endTime: null,
@@ -294,6 +294,7 @@ const generateChatResponse = async ({
   const { localDate, localTime } = getLocalClock(timezone);
   const nearbyPlaces = await placeService.findNearbyPlaces({
     origin,
+    searchText: message,
     radiusKm,
     limit: MAX_CANDIDATES,
   });

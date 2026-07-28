@@ -6,6 +6,154 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 100;
 const cache = new Map();
 
+const SEARCH_GROUPS = {
+  attractions: [
+    `"tourism"~"^(attraction|museum|gallery|theme_park|zoo|viewpoint|aquarium)$"`,
+    `"historic"`,
+    `"leisure"~"^(park|garden|nature_reserve|water_park)$"`,
+    `"amenity"~"^(arts_centre|theatre)$"`,
+  ],
+  food: [
+    `"amenity"~"^(restaurant|cafe|fast_food|food_court|ice_cream|bar|pub|biergarten)$"`,
+  ],
+  groceries: [
+    `"shop"~"^(supermarket|convenience|grocery|greengrocer|bakery|deli|butcher|seafood|organic|beverages)$"`,
+    `"amenity"="marketplace"`,
+  ],
+  shopping: [
+    `"shop"~"^(mall|department_store|general|clothes|shoes|books|electronics|gift|jewelry|sports|toys|beauty|furniture|hardware|chemist)$"`,
+  ],
+  nightlife: [
+    `"amenity"~"^(nightclub|casino|bar|pub|biergarten)$"`,
+  ],
+  accommodation: [
+    `"tourism"~"^(hotel|hostel|guest_house|motel|apartment|camp_site|caravan_site)$"`,
+  ],
+  nature: [
+    `"leisure"~"^(park|garden|nature_reserve|playground|picnic_table)$"`,
+    `"tourism"~"^(viewpoint|picnic_site)$"`,
+    `"natural"~"^(beach|peak|spring)$"`,
+  ],
+  entertainment: [
+    `"amenity"~"^(cinema|theatre|arts_centre|community_centre|events_venue)$"`,
+    `"leisure"~"^(sports_centre|bowling_alley|escape_game|water_park|amusement_arcade|miniature_golf)$"`,
+  ],
+  health: [
+    `"amenity"~"^(hospital|clinic|doctors|dentist|pharmacy|veterinary)$"`,
+    `"healthcare"`,
+  ],
+  services: [
+    `"amenity"~"^(bank|atm|post_office|police|library|toilets|car_rental|bureau_de_change|laundry)$"`,
+  ],
+  transport: [
+    `"amenity"~"^(bus_station|taxi|car_rental|fuel|charging_station|bicycle_rental|ferry_terminal|parking)$"`,
+    `"public_transport"~"^(station|stop_position|platform)$"`,
+    `"railway"~"^(station|halt|tram_stop|subway_entrance)$"`,
+  ],
+  education: [
+    `"amenity"~"^(school|college|university|kindergarten|language_school|library)$"`,
+  ],
+  worship: [
+    `"amenity"="place_of_worship"`,
+  ],
+  fitness: [
+    `"leisure"~"^(fitness_centre|sports_centre|swimming_pool|pitch|track|golf_course)$"`,
+  ],
+  personalCare: [
+    `"shop"~"^(hairdresser|beauty|massage|optician)$"`,
+  ],
+};
+
+const SEARCH_INTENTS = [
+  {
+    group: "food",
+    pattern:
+      /\b(food|eat|dining|restaurants?|cafes?|coffee|breakfast|brunch|lunch|dinner|supper|desserts?|baker(?:y|ies)|fast food|bars?|pubs?)\b/i,
+  },
+  {
+    group: "groceries",
+    pattern:
+      /\b(grocer(?:y|ies)|supermarkets?|convenience stores?|markets?|fresh produce|butchers?|delis?)\b/i,
+  },
+  {
+    group: "shopping",
+    pattern:
+      /\b(shops?|shopping|malls?|department stores?|retail|boutiques?|clothes|electronics|souvenirs?|gifts?)\b/i,
+  },
+  {
+    group: "nightlife",
+    pattern: /\b(nightlife|night club|nightclub|casino|cocktail|drinks?)\b/i,
+  },
+  {
+    group: "accommodation",
+    pattern: /\b(hotel|hostel|accommodation|lodging|motel|guest house|camping)\b/i,
+  },
+  {
+    group: "nature",
+    pattern:
+      /\b(nature|park|garden|beach|hiking|viewpoint|scenic|outdoor|playground|picnic)\b/i,
+  },
+  {
+    group: "entertainment",
+    pattern:
+      /\b(entertainment|cinema|movie|theatre|theater|bowling|escape room|event|amusement|activity)\b/i,
+  },
+  {
+    group: "health",
+    pattern:
+      /\b(health|hospital|clinic|doctor|dentist|pharmacy|medical|veterinary|vet)\b/i,
+  },
+  {
+    group: "services",
+    pattern:
+      /\b(bank|atm|cash|post office|police|toilet|restroom|currency exchange|laundry)\b/i,
+  },
+  {
+    group: "transport",
+    pattern:
+      /\b(transport|bus|train|railway|subway|metro|tram|taxi|parking|fuel|charging station|car rental|bicycle rental|ferry)\b/i,
+  },
+  {
+    group: "education",
+    pattern:
+      /\b(school|college|university|kindergarten|library|education|study)\b/i,
+  },
+  {
+    group: "worship",
+    pattern: /\b(church|mosque|temple|synagogue|worship|religious)\b/i,
+  },
+  {
+    group: "fitness",
+    pattern:
+      /\b(gym|fitness|sports|swimming|golf|exercise|workout|stadium)\b/i,
+  },
+  {
+    group: "personalCare",
+    pattern: /\b(hairdresser|hair salon|beauty|massage|spa|optician)\b/i,
+  },
+  {
+    group: "attractions",
+    pattern:
+      /\b(attractions?|sightseeing|museums?|galler(?:y|ies)|historic|landmarks?|zoos?|aquariums?|tourist)\b/i,
+  },
+];
+
+const DEFAULT_SEARCH_GROUPS = [
+  "attractions",
+  "food",
+  "groceries",
+  "shopping",
+  "nature",
+  "entertainment",
+];
+
+const getSearchGroups = (searchText = "") => {
+  const groups = SEARCH_INTENTS.filter(({ pattern }) => pattern.test(searchText)).map(
+    ({ group }) => group
+  );
+  return groups.length > 0 ? [...new Set(groups)] : DEFAULT_SEARCH_GROUPS;
+};
+
 const toRadians = (degrees) => (degrees * Math.PI) / 180;
 
 const getStraightLineDistanceKm = (origin, destination) => {
@@ -32,7 +180,16 @@ const getElementCoordinates = (element) => {
 
 const getCategory = (tags) => {
   const category =
-    tags.tourism || tags.historic || tags.leisure || tags.amenity || "attraction";
+    tags.tourism ||
+    tags.historic ||
+    tags.leisure ||
+    tags.amenity ||
+    tags.shop ||
+    tags.healthcare ||
+    tags.public_transport ||
+    tags.railway ||
+    tags.natural ||
+    "place";
   return category.replaceAll("_", " ");
 };
 
@@ -100,19 +257,30 @@ const normalizePlace = (element, origin) => {
   };
 };
 
-const buildOverpassQuery = ({ latitude, longitude, radiusMeters }) => `
-[out:json][timeout:20];
+const buildOverpassQuery = ({
+  latitude,
+  longitude,
+  radiusMeters,
+  searchGroups,
+}) => {
+  const filters = searchGroups.flatMap((group) => SEARCH_GROUPS[group] || []);
+  const queries = filters
+    .map(
+      (filter) =>
+        `  nwr(around:${radiusMeters},${latitude},${longitude})[${filter}]["name"];`
+    )
+    .join("\n");
+  return `[out:json][timeout:20];
 (
-  nwr(around:${radiusMeters},${latitude},${longitude})["tourism"~"^(attraction|museum|gallery|theme_park|zoo|viewpoint|aquarium)$"];
-  nwr(around:${radiusMeters},${latitude},${longitude})["historic"];
-  nwr(around:${radiusMeters},${latitude},${longitude})["leisure"~"^(park|nature_reserve|water_park)$"];
-  nwr(around:${radiusMeters},${latitude},${longitude})["amenity"~"^(arts_centre|theatre)$"];
+${queries}
 );
-out center tags;
-`;
+out center tags 250;`;
+};
 
-const getCacheKey = ({ latitude, longitude, radiusKm }) =>
-  `${latitude.toFixed(3)}:${longitude.toFixed(3)}:${radiusKm}`;
+const getCacheKey = ({ latitude, longitude, radiusKm, searchGroups }) =>
+  `${latitude.toFixed(3)}:${longitude.toFixed(3)}:${radiusKm}:${searchGroups.join(
+    ","
+  )}`;
 
 const readCache = (key) => {
   const entry = cache.get(key);
@@ -131,11 +299,36 @@ const writeCache = (key, value) => {
   cache.set(key, { createdAt: Date.now(), value });
 };
 
-const findNearbyPlaces = async ({ origin, radiusKm = 5, limit = 20 }) => {
+const selectDiversePlaces = (places, limit) => {
+  const placesByCategory = new Map();
+  for (const place of places) {
+    const categoryPlaces = placesByCategory.get(place.category) || [];
+    categoryPlaces.push(place);
+    placesByCategory.set(place.category, categoryPlaces);
+  }
+
+  const selected = [];
+  const categoryQueues = [...placesByCategory.values()];
+  while (selected.length < limit && categoryQueues.some((queue) => queue.length)) {
+    for (const queue of categoryQueues) {
+      if (queue.length && selected.length < limit) selected.push(queue.shift());
+    }
+  }
+  return selected;
+};
+
+const findNearbyPlaces = async ({
+  origin,
+  searchText = "",
+  radiusKm = 5,
+  limit = 20,
+}) => {
+  const searchGroups = getSearchGroups(searchText);
   const cacheKey = getCacheKey({
     latitude: origin.latitude,
     longitude: origin.longitude,
     radiusKm,
+    searchGroups,
   });
   const cached = readCache(cacheKey);
   if (cached) return cached.slice(0, limit);
@@ -144,6 +337,7 @@ const findNearbyPlaces = async ({ origin, radiusKm = 5, limit = 20 }) => {
     latitude: origin.latitude,
     longitude: origin.longitude,
     radiusMeters: Math.round(radiusKm * 1000),
+    searchGroups,
   });
   const response = await fetchWithTimeout(OVERPASS_BASE_URL, {
     method: "POST",
@@ -166,14 +360,18 @@ const findNearbyPlaces = async ({ origin, radiusKm = 5, limit = 20 }) => {
 
   const uniquePlaces = Array.from(
     new Map(places.map((place) => [place.name.toLowerCase(), place])).values()
-  ).slice(0, 50);
-  writeCache(cacheKey, uniquePlaces);
-  return uniquePlaces.slice(0, limit);
+  );
+  const diversePlaces = selectDiversePlaces(uniquePlaces, 50);
+  writeCache(cacheKey, diversePlaces);
+  return diversePlaces.slice(0, limit);
 };
 
 module.exports = {
   findNearbyPlaces,
+  buildOverpassQuery,
+  getSearchGroups,
   getStraightLineDistanceKm,
   normalizePlace,
   parseTicketPrice,
+  selectDiversePlaces,
 };
