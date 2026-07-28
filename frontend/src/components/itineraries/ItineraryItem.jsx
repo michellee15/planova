@@ -99,13 +99,19 @@ function ItineraryItem({
       </div>
 
       <div className="item-card-body">
-        {itinerary.location && (
-          <p className="itinerary-location">
-            Location: {itinerary.location}
-          </p>
-        )}
+      {itinerary.location && (
+        <p className="itinerary-location">
+          Location: {itinerary.location}
+        </p>
+      )}
 
-        {itinerary.notes && <p>{itinerary.notes}</p>}
+      {itinerary.formatted_address && (
+        <p className="itinerary-address">
+          Address: {itinerary.formatted_address}
+        </p>
+      )}
+
+      {itinerary.notes && <p>{itinerary.notes}</p>}
       </div>
 
       <div className="item-actions">

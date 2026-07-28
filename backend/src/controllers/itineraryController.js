@@ -1,4 +1,5 @@
 const itineraryModel = require("../models/itineraryModel");
+const { geocodeLocation } = require("../services/geocodeService");
 
 const getItineraryByTripId = async (req, res) => {
   try {
@@ -14,9 +15,17 @@ const getItineraryByTripId = async (req, res) => {
 
 const createItinerary = async(req, res) => {
   try {
+    let geocodedLoc = null;
     const {tripId} = req.params;
     const {title, location, itinerary_date, start_time, end_time, notes} = req.body;
     if (!title || !itinerary_date) return res.status(400).json({message: "Title and itinerary date are required"});
+    if (location) {
+      try {
+        geocodedLoc = await geocodeLocation(location);
+      } catch (error) {
+        console.error("Geocoding failed: ", error);
+      }
+    }
     const newItinerary = await itineraryModel.createItinerary({
       user_id: req.user.id,
       trip_id: tripId,
@@ -26,11 +35,13 @@ const createItinerary = async(req, res) => {
       start_time: start_time || null,
       end_time: end_time || null,
       notes: notes || null,
-      latitude: null,
-      longitude: null,
-      formatted_address: null,
-      place_id: null
+      latitude: geocodedLoc?.latitude || null,
+      longitude: geocodedLoc?.longitude || null,
+      formatted_address: geocodedLoc?.formatted_address || null,
+      place_id: geocodedLoc?.place_id || null,
     });
+    console.log("Location received:", location);
+    console.log("Geocoded location:", geocodedLoc);
     if (!newItinerary) return res.status(404).json({message: "Trip not found"});
     res.status(201).json(newItinerary);
   } catch (error) {
@@ -41,10 +52,18 @@ const createItinerary = async(req, res) => {
 
 const updateItinerary = async (req, res) => {
   try {
+    let geocodedLoc = null;
     const userId = req.user.id;
     const {id} = req.params;
     const {title, location, itinerary_date, start_time, end_time, notes } = req.body;
     if (!title || !itinerary_date) return res.status(400).json({message: "Title and itinerary date are required"});
+    if (location) {
+      try {
+        geocodedLoc = await geocodeLocation(location);
+      } catch (error) {
+        console.error("Geocoding failed: ", error);
+      }
+    }
     const updatedItinerary = await itineraryModel.updateItinerary(id, userId, {
       title,
       location,
@@ -52,10 +71,10 @@ const updateItinerary = async (req, res) => {
       start_time: start_time || null,
       end_time: end_time|| null,
       notes: notes || null,
-      latitude: null,
-      longitude: null,
-      formatted_address: null,
-      place_id: null
+      latitude: geocodedLoc?.latitude || null,
+      longitude: geocodedLoc?.longitude || null,
+      formatted_address: geocodedLoc?.formatted_address || null,
+      place_id: geocodedLoc?.place_id || null
     });
     if (!updatedItinerary) return res.status(404).json({message: "Itinerary not found"});
     res.json(updatedItinerary);
