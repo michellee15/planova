@@ -7,7 +7,7 @@ import {
   sendChatMessage,
 } from "../api/chatApi";
 
-function useChatbot(tripId) {
+function useChatbot() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -17,24 +17,20 @@ function useChatbot(tripId) {
   const [error, setError] = useState("");
 
   const loadSessions = useCallback(async () => {
-    if (!tripId) return [];
-
     try {
       setLoadingSessions(true);
       setError("");
       const data = await getChatSessions();
-      const tripSessions = (Array.isArray(data) ? data : []).filter(
-        (session) => String(session.trip_id) === String(tripId),
-      );
+      const allSessions = Array.isArray(data) ? data : [];
 
-      setSessions(tripSessions);
+      setSessions(allSessions);
       setActiveSessionId((currentId) => {
-        const stillExists = tripSessions.some(
+        const stillExists = allSessions.some(
           (session) => String(session.id) === String(currentId),
         );
-        return stillExists ? currentId : tripSessions[0]?.id || null;
+        return stillExists ? currentId : allSessions[0]?.id || null;
       });
-      return tripSessions;
+      return allSessions;
     } catch (loadError) {
       console.error("Error loading chat sessions:", loadError);
       setError(loadError.message);
@@ -42,7 +38,7 @@ function useChatbot(tripId) {
     } finally {
       setLoadingSessions(false);
     }
-  }, [tripId]);
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -52,11 +48,9 @@ function useChatbot(tripId) {
         const data = await getChatSessions();
         if (ignore) return;
 
-        const tripSessions = (Array.isArray(data) ? data : []).filter(
-          (session) => String(session.trip_id) === String(tripId),
-        );
-        setSessions(tripSessions);
-        setActiveSessionId(tripSessions[0]?.id || null);
+        const allSessions = Array.isArray(data) ? data : [];
+        setSessions(allSessions);
+        setActiveSessionId(allSessions[0]?.id || null);
       } catch (loadError) {
         if (!ignore) {
           console.error("Error loading chat sessions:", loadError);
@@ -71,7 +65,7 @@ function useChatbot(tripId) {
     return () => {
       ignore = true;
     };
-  }, [tripId]);
+  }, []);
 
   useEffect(() => {
     if (!activeSessionId) return;
@@ -103,7 +97,7 @@ function useChatbot(tripId) {
     };
   }, [activeSessionId]);
 
-  const startNewConversation = async () => {
+  const startNewConversation = async (tripId = null) => {
     try {
       setError("");
       const session = await createChatSession({ tripId });
@@ -118,7 +112,7 @@ function useChatbot(tripId) {
     }
   };
 
-  const sendMessage = async (messageData) => {
+  const sendMessage = async (messageData, newSessionTripId = null) => {
     let sessionId = activeSessionId;
 
     try {
@@ -126,7 +120,7 @@ function useChatbot(tripId) {
       setError("");
 
       if (!sessionId) {
-        const session = await startNewConversation();
+        const session = await startNewConversation(newSessionTripId);
         sessionId = session.id;
       }
 

@@ -1,4 +1,4 @@
-import{useState, useEffect} from "react";
+import{useState, useEffect, useCallback} from "react";
 import useCurrentLocation from "../hooks/useCurrentLocation";
 import { calculateDistanceInKm } from "../utils/distanceUtils";
 import { getTravelTimes } from "../api/routeApi";
@@ -31,7 +31,7 @@ function useItineraries(tripId) {
     getCurrentLocation,
   } = useCurrentLocation();
 
-  const loadItineraries = async () => {
+  const loadItineraries = useCallback(async () => {
     try {
       const itineraryData = await getItineraryByTripId(tripId);
       if (Array.isArray(itineraryData)) {
@@ -44,42 +44,62 @@ function useItineraries(tripId) {
       console.error("Error loading itineraries: ", error);
       setItineraries([]);
     }
-  };
-
-  useEffect(() => {
-    if (tripId) loadItineraries();
   }, [tripId]);
 
   useEffect(() => {
-    if (!currentLocation) return;
-  
-    const itineraryWithCoord = itineraries.filter((item) => {
-      return item.latitude && item.longitude;
-    });
-  
-    if (itineraryWithCoord.length === 0) {
-      setNearestItinerary(null);
-      setNearestTravelTimes(null);
-      return;
-    }
-    const itemsWithDistance = itineraryWithCoord.map((item) => {
-      const distance = calculateDistanceInKm(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        Number(item.latitude),
-        Number(item.longitude)
+    if (!tripId) return undefined;
+    const timeoutId = window.setTimeout(loadItineraries, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [tripId, loadItineraries]);
+
+  useEffect(() => {
+    const handleItineraryUpdated = (event) => {
+      if (String(event.detail?.tripId) === String(tripId)) {
+        loadItineraries();
+      }
+    };
+
+    window.addEventListener("planova:itinerary-updated", handleItineraryUpdated);
+    return () => {
+      window.removeEventListener(
+        "planova:itinerary-updated",
+        handleItineraryUpdated,
       );
-  
-      return {
-        ...item,
-        distance,
-      };
-    });
-  
-    const nearest = itemsWithDistance.sort((a, b) => a.distance - b.distance)[0];
-    setNearestItinerary(nearest);
-  
-    const loadTravelTimes = async () => {
+    };
+  }, [tripId, loadItineraries]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    Promise.resolve().then(async () => {
+      if (!currentLocation || ignore) return;
+
+      const itineraryWithCoord = itineraries.filter((item) => {
+        return item.latitude && item.longitude;
+      });
+
+      if (itineraryWithCoord.length === 0) {
+        setNearestItinerary(null);
+        setNearestTravelTimes(null);
+        return;
+      }
+      const itemsWithDistance = itineraryWithCoord.map((item) => {
+        const distance = calculateDistanceInKm(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          Number(item.latitude),
+          Number(item.longitude)
+        );
+
+        return {
+          ...item,
+          distance,
+        };
+      });
+
+      const nearest = itemsWithDistance.sort((a, b) => a.distance - b.distance)[0];
+      setNearestItinerary(nearest);
+
       try {
         setTravelTimesLoading(true);
         setTravelTimesError("");
@@ -94,16 +114,18 @@ function useItineraries(tripId) {
             longitude: Number(nearest.longitude),
           },
         });
-        setNearestTravelTimes(travelTimes);
+        if (!ignore) setNearestTravelTimes(travelTimes);
       } catch (error) {
         console.error("Error loading travel times: ", error);
-        setTravelTimesError("Failed to load travel times");
+        if (!ignore) setTravelTimesError("Failed to load travel times");
       } finally {
-        setTravelTimesLoading(false);
+        if (!ignore) setTravelTimesLoading(false);
       }
+    });
+
+    return () => {
+      ignore = true;
     };
-  
-    loadTravelTimes();
   }, [currentLocation, itineraries]);
 
   const handleItineraryChange = (event) => {

@@ -17,7 +17,6 @@ import SettlementHistory from "../components/splits/SettlementHistory";
 import useItineraries from "../hooks/useItineraries";
 import ItineraryForm from "../components/itineraries/ItineraryForm";
 import ItineraryList from "../components/itineraries/ItineraryList";
-import Chatbot from "../components/chat/Chatbot";
 
 import {
   calculateBalances,
@@ -81,7 +80,6 @@ function TripDetailsPage() {
     nearestTravelTimes,
     travelTimesLoading,
     travelTimesError,
-    loadItineraries,
   } = useItineraries(id);
 
   useEffect(() => {
@@ -137,12 +135,6 @@ function TripDetailsPage() {
       <TripHeader trip={trip} />
       <TripOverview trip={trip} />
       <BudgetSummary trip={trip} expenses={expenses} />
-
-      <Chatbot
-        trip={trip}
-        itineraries={itineraries}
-        onItinerarySaved={loadItineraries}
-      />
 
       <section className="section-card">
         <h2 className="section-header h2">Trip Members</h2>

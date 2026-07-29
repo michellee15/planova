@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createItineraryBatch } from "../../api/itineraryApi";
+import { matchPath, useLocation } from "react-router-dom";
+import {
+  createItineraryBatch,
+  getItineraryByTripId,
+} from "../../api/itineraryApi";
+import { getTripById, getTrips } from "../../api/tripApi";
 import useChatbot from "../../hooks/useChatbot";
 
 const promptSuggestions = [
-  "What museums and landmarks are nearby?",
+  "Find a good place to eat nearby",
+  "Where is the nearest pharmacy or ATM?",
+  "Show me shopping and things to do",
   "Plan a relaxed four-hour afternoon",
-  "Find family-friendly attractions",
 ];
 
 const Icon = ({ name, size = 18 }) => {
@@ -50,6 +56,19 @@ const Icon = ({ name, size = 18 }) => {
       </>
     ),
     check: <path d="m5 12 4 4L19 6" />,
+    history: (
+      <>
+        <path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6" />
+        <path d="M4 4v4.6h4.6M12 8v4l2.5 1.5" />
+      </>
+    ),
+    close: <path d="m6 6 12 12M18 6 6 18" />,
+    chat: (
+      <>
+        <path d="M5 18.5 3.5 21l3.8-1.1A9 9 0 1 0 5 18.5Z" />
+        <path d="M8 12h.01M12 12h.01M16 12h.01" />
+      </>
+    ),
     pin: (
       <>
         <path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z" />
@@ -184,7 +203,7 @@ const RecommendationCard = ({
           disabled={disabled || saving}
           onClick={() => onSave([item])}
         >
-          {saving ? "Adding..." : "Add to itinerary"}
+          {saving ? "Saving..." : "Save to trip"}
         </button>
       )}
     </div>
@@ -193,19 +212,38 @@ const RecommendationCard = ({
 
 function RecommendationGroup({
   data,
-  trip,
-  savedPlaceIds,
-  onItinerarySaved,
+  trips,
+  defaultTripId,
+  currentTripId,
+  currentItineraries,
 }) {
+  const [targetTripId, setTargetTripId] = useState(
+    defaultTripId ? String(defaultTripId) : "",
+  );
+  const targetTrip = trips.find(
+    (trip) => String(trip.id) === String(targetTripId),
+  );
+  const existingPlaceIds = useMemo(
+    () =>
+      String(currentTripId) === String(targetTripId)
+        ? new Set(currentItineraries.map((item) => item.place_id).filter(Boolean))
+        : new Set(),
+    [currentItineraries, currentTripId, targetTripId],
+  );
+  const [savedByTrip, setSavedByTrip] = useState({});
+  const isSaved = (placeId) =>
+    existingPlaceIds.has(placeId) ||
+    savedByTrip[String(targetTripId)]?.has(placeId);
+
   const availableItems = (data.items || []).filter(
-    (item) => !savedPlaceIds.has(item.placeId),
+    (item) => !isSaved(item.placeId),
   );
   const [selectedIds, setSelectedIds] = useState(
     () => new Set(availableItems.map((item) => item.placeId)),
   );
   const [itineraryDate, setItineraryDate] = useState(
     data.planDate ||
-      trip.start_date?.slice(0, 10) ||
+      targetTrip?.start_date?.slice(0, 10) ||
       new Date().toISOString().slice(0, 10),
   );
   const [savingIds, setSavingIds] = useState(new Set());
@@ -222,13 +260,17 @@ function RecommendationGroup({
   };
 
   const saveItems = async (items) => {
+    if (!targetTripId) {
+      setSaveError("Choose a trip before saving these places.");
+      return;
+    }
     if (!itineraryDate) {
-      setSaveError("Choose a date before adding recommendations.");
+      setSaveError("Choose a date before saving these places.");
       return;
     }
 
     const unsavedItems = items.filter(
-      (item) => !savedPlaceIds.has(item.placeId),
+      (item) => !isSaved(item.placeId),
     );
     if (unsavedItems.length === 0) return;
 
@@ -237,7 +279,7 @@ function RecommendationGroup({
       setSaveMessage("");
       setSavingIds(new Set(unsavedItems.map((item) => item.placeId)));
       await createItineraryBatch(
-        trip.id,
+        targetTripId,
         unsavedItems.map((item) => ({
           title: item.name,
           location: item.location || null,
@@ -258,12 +300,21 @@ function RecommendationGroup({
         unsavedItems.forEach((item) => next.delete(item.placeId));
         return next;
       });
+      setSavedByTrip((current) => {
+        const next = new Set(current[String(targetTripId)] || []);
+        unsavedItems.forEach((item) => next.add(item.placeId));
+        return { ...current, [String(targetTripId)]: next };
+      });
       setSaveMessage(
         `${unsavedItems.length} ${
           unsavedItems.length === 1 ? "place" : "places"
-        } added to your itinerary.`,
+        } saved to ${targetTrip?.title || "your trip"}.`,
       );
-      await onItinerarySaved();
+      window.dispatchEvent(
+        new CustomEvent("planova:itinerary-updated", {
+          detail: { tripId: targetTripId },
+        }),
+      );
     } catch (error) {
       console.error("Error saving chat recommendations:", error);
       setSaveError(error.message);
@@ -273,7 +324,7 @@ function RecommendationGroup({
   };
 
   const selectedItems = (data.items || []).filter(
-    (item) => selectedIds.has(item.placeId) && !savedPlaceIds.has(item.placeId),
+    (item) => selectedIds.has(item.placeId) && !isSaved(item.placeId),
   );
 
   return (
@@ -281,20 +332,46 @@ function RecommendationGroup({
       <div className="chat-recommendations-toolbar">
         <div>
           <strong>
-            {data.mode === "plan" ? "Your suggested plan" : "Places worth exploring"}
+            {data.mode === "plan" ? "Your suggested plan" : "Nearby recommendations"}
           </strong>
           <span>
             Within {data.radiusKm || 5} km · {data.items?.length || 0} results
           </span>
         </div>
-        <label>
-          <span>Date</span>
-          <input
-            type="date"
-            value={itineraryDate}
-            onChange={(event) => setItineraryDate(event.target.value)}
-          />
-        </label>
+        <div className="chat-save-fields">
+          <label>
+            <span>Save to</span>
+            <select
+              value={targetTripId}
+              onChange={(event) => {
+                const nextTripId = event.target.value;
+                const nextTrip = trips.find(
+                  (trip) => String(trip.id) === String(nextTripId),
+                );
+                setTargetTripId(nextTripId);
+                setSaveError("");
+                if (!data.planDate && nextTrip?.start_date) {
+                  setItineraryDate(nextTrip.start_date.slice(0, 10));
+                }
+              }}
+            >
+              <option value="">Choose a trip</option>
+              {trips.map((trip) => (
+                <option key={trip.id} value={trip.id}>
+                  {trip.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Date</span>
+            <input
+              type="date"
+              value={itineraryDate}
+              onChange={(event) => setItineraryDate(event.target.value)}
+            />
+          </label>
+        </div>
       </div>
 
       <div className="chat-recommendation-grid">
@@ -304,7 +381,7 @@ function RecommendationGroup({
             item={item}
             checked={selectedIds.has(item.placeId)}
             disabled={savingIds.size > 0}
-            saved={savedPlaceIds.has(item.placeId)}
+            saved={isSaved(item.placeId)}
             saving={savingIds.has(item.placeId)}
             onToggle={toggleItem}
             onSave={saveItems}
@@ -324,8 +401,8 @@ function RecommendationGroup({
           onClick={() => saveItems(selectedItems)}
         >
           {savingIds.size > 0
-            ? "Adding..."
-            : `Add selected (${selectedItems.length})`}
+            ? "Saving..."
+            : `Save selected (${selectedItems.length})`}
         </button>
       </div>
 
@@ -334,7 +411,21 @@ function RecommendationGroup({
   );
 }
 
-function Chatbot({ trip, itineraries = [], onItinerarySaved }) {
+const formatSessionDate = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const today = new Date();
+  const isToday = date.toDateString() === today.toDateString();
+  return isToday
+    ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : date.toLocaleDateString([], { month: "short", day: "numeric" });
+};
+
+function Chatbot() {
+  const routeLocation = useLocation();
+  const tripRoute = matchPath("/trips/:id", routeLocation.pathname);
+  const pageTripId = tripRoute?.params.id || null;
+
   const {
     sessions,
     activeSessionId,
@@ -348,8 +439,13 @@ function Chatbot({ trip, itineraries = [], onItinerarySaved }) {
     startNewConversation,
     sendMessage,
     removeConversation,
-  } = useChatbot(trip.id);
+  } = useChatbot();
 
+  const [isOpen, setIsOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [pageTrip, setPageTrip] = useState(null);
+  const [pageItineraries, setPageItineraries] = useState([]);
+  const [trips, setTrips] = useState([]);
   const [message, setMessage] = useState("");
   const [mode, setMode] = useState("auto");
   const [radiusKm, setRadiusKm] = useState(5);
@@ -359,19 +455,107 @@ function Chatbot({ trip, itineraries = [], onItinerarySaved }) {
   const [requestingLocation, setRequestingLocation] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const savedPlaceIds = useMemo(
+  const activeSession = useMemo(
     () =>
-      new Set(
-        itineraries
-          .map((item) => item.place_id)
-          .filter(Boolean),
-      ),
-    [itineraries],
+      sessions.find(
+        (session) => String(session.id) === String(activeSessionId),
+      ) || null,
+    [activeSessionId, sessions],
   );
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages, sending]);
+    let ignore = false;
+
+    getTrips()
+      .then((data) => {
+        if (!ignore) setTrips(Array.isArray(data) ? data : []);
+      })
+      .catch((tripError) =>
+        console.error("Error loading trips for chatbot:", tripError),
+      );
+
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadPageTrip = async () => {
+      if (!pageTripId) {
+        await Promise.resolve();
+        if (!ignore) {
+          setPageTrip(null);
+          setPageItineraries([]);
+        }
+        return;
+      }
+
+      try {
+        const [tripData, itineraryData] = await Promise.all([
+          getTripById(pageTripId),
+          getItineraryByTripId(pageTripId),
+        ]);
+        if (!ignore) {
+          setPageTrip(tripData);
+          setPageItineraries(Array.isArray(itineraryData) ? itineraryData : []);
+        }
+      } catch (tripError) {
+        if (!ignore) {
+          console.error("Error loading chatbot trip context:", tripError);
+          setPageTrip(null);
+          setPageItineraries([]);
+        }
+      }
+    };
+
+    loadPageTrip();
+    return () => {
+      ignore = true;
+    };
+  }, [pageTripId]);
+
+  useEffect(() => {
+    const handleItineraryUpdated = (event) => {
+      if (String(event.detail?.tripId) !== String(pageTripId)) return;
+      getItineraryByTripId(pageTripId)
+        .then((data) => setPageItineraries(Array.isArray(data) ? data : []))
+        .catch((tripError) =>
+          console.error("Error refreshing chatbot itinerary context:", tripError),
+        );
+    };
+
+    window.addEventListener("planova:itinerary-updated", handleItineraryUpdated);
+    return () => {
+      window.removeEventListener(
+        "planova:itinerary-updated",
+        handleItineraryUpdated,
+      );
+    };
+  }, [pageTripId]);
+
+  useEffect(() => {
+    if (isOpen && !showHistory) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [isOpen, messages, sending, showHistory]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        setShowHistory(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen]);
 
   const getDeviceLocation = () =>
     new Promise((resolve, reject) => {
@@ -428,290 +612,405 @@ function Chatbot({ trip, itineraries = [], onItinerarySaved }) {
     }
 
     try {
-      await sendMessage({
-        message: cleanMessage,
-        mode,
-        ...(manualLocation.trim()
-          ? { manual_location: manualLocation.trim() }
-          : { location }),
-        timezone:
-          Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-        radius_km: Number(radiusKm),
-      });
+      await sendMessage(
+        {
+          message: cleanMessage,
+          mode,
+          ...(manualLocation.trim()
+            ? { manual_location: manualLocation.trim() }
+            : { location }),
+          timezone:
+            Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+          radius_km: Number(radiusKm),
+        },
+        pageTripId,
+      );
       setMessage("");
     } catch {
       // The hook exposes the backend message in the assistant error state.
     }
   };
 
-  const handleDeleteConversation = async () => {
-    if (!activeSessionId) return;
+  const handleDeleteConversation = async (sessionId) => {
     const shouldDelete = window.confirm(
       "Delete this conversation and its messages?",
     );
     if (!shouldDelete) return;
 
     try {
-      await removeConversation(activeSessionId);
+      await removeConversation(sessionId);
     } catch {
       // The hook exposes the backend message in the assistant error state.
     }
   };
 
   const hasConversation = messages.length > 0;
+  const sessionContextLabel = activeSession?.trip_title
+    ? activeSession.trip_title
+    : "General";
+
+  const handleNewConversation = async () => {
+    try {
+      await startNewConversation(pageTripId);
+      setShowHistory(false);
+    } catch {
+      // The hook exposes the backend message in the assistant error state.
+    }
+  };
 
   return (
-    <section className="chatbot-shell" aria-labelledby="chatbot-title">
-      <div className="chatbot-header">
-        <div className="chatbot-title-group">
-          <span className="chatbot-mark">
-            <Icon name="sparkle" size={24} />
+    <div className="chatbot-widget">
+      {!isOpen && (
+        <button
+          className="chatbot-launcher"
+          type="button"
+          aria-label="Open Planova AI assistant"
+          aria-expanded="false"
+          onClick={() => setIsOpen(true)}
+        >
+          <Icon name="chat" size={27} />
+          <span className="chatbot-launcher-sparkle">
+            <Icon name="sparkle" size={13} />
           </span>
-          <div>
-            <p className="chatbot-eyebrow">Planova AI</p>
-            <h2 id="chatbot-title">Explore around your trip</h2>
-            <p>Discover real nearby places or shape them into a four-hour plan.</p>
-          </div>
-        </div>
+        </button>
+      )}
 
-        <div className="chatbot-session-actions">
-          {sessions.length > 0 && (
-            <label className="chat-session-picker">
-              <span className="sr-only">Conversation</span>
-              <select
-                value={activeSessionId || ""}
-                disabled={loadingSessions || sending}
-                onChange={(event) => setActiveSessionId(event.target.value)}
-              >
-                {sessions.map((session) => (
-                  <option key={session.id} value={session.id}>
-                    {session.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <button
-            className="chat-icon-button"
-            type="button"
-            title="New conversation"
-            disabled={sending}
-            onClick={() => startNewConversation().catch(() => {})}
-          >
-            <Icon name="plus" />
-            <span>New chat</span>
-          </button>
-          {activeSessionId && (
-            <button
-              className="chat-icon-button chat-delete-button"
-              type="button"
-              title="Delete conversation"
-              disabled={sending}
-              onClick={handleDeleteConversation}
-            >
-              <Icon name="trash" />
-              <span className="sr-only">Delete conversation</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="chatbot-conversation" aria-live="polite">
-        {(loadingSessions || loadingMessages) && (
-          <div className="chat-loading-state">
-            <span className="chat-typing-dots" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
-            Loading your conversation...
-          </div>
-        )}
-
-        {!loadingSessions && !loadingMessages && !hasConversation && (
-          <div className="chat-welcome">
-            <span className="chat-welcome-icon">
-              <Icon name="sparkle" size={28} />
-            </span>
-            <h3>Where should we explore?</h3>
-            <p>
-              I’ll use your location only for this search and match nearby places
-              with the details of {trip.title}.
-            </p>
-            <div className="chat-suggestions">
-              {promptSuggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => setMessage(suggestion)}
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!loadingMessages &&
-          messages.map((chatMessage) => {
-            const responseData =
-              chatMessage.response_data || chatMessage.responseData;
-            return (
-              <div
-                className={`chat-message chat-message-${chatMessage.role}`}
-                key={chatMessage.id}
-              >
-                <div className="chat-message-label">
-                  {chatMessage.role === "assistant" ? "Planova AI" : "You"}
-                </div>
-                <div className="chat-bubble">
-                  <p>{chatMessage.content}</p>
-                </div>
-                {chatMessage.role === "assistant" && responseData?.items && (
-                  <RecommendationGroup
-                    data={responseData}
-                    trip={trip}
-                    savedPlaceIds={savedPlaceIds}
-                    onItinerarySaved={onItinerarySaved}
-                  />
-                )}
-              </div>
-            );
-          })}
-
-        {sending && (
-          <div className="chat-message chat-message-assistant">
-            <div className="chat-message-label">Planova AI</div>
-            <div className="chat-bubble chat-bubble-loading">
-              <span className="chat-typing-dots" aria-label="Finding places">
-                <i />
-                <i />
-                <i />
+      {isOpen && (
+        <section
+          className="chatbot-panel"
+          role="dialog"
+          aria-label="Planova AI assistant"
+        >
+          <header className="chatbot-header">
+            <div className="chatbot-title-group">
+              <span className="chatbot-mark">
+                <Icon name="sparkle" size={19} />
               </span>
-              Finding places and checking routes...
+              <div>
+                <h2 id="chatbot-title">Planova AI</h2>
+                <p>
+                  {activeSession?.title || "New conversation"}
+                  <span className="chat-context-badge">{sessionContextLabel}</span>
+                </p>
+              </div>
             </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      <form className="chatbot-composer" onSubmit={handleSubmit}>
-        <div className="chatbot-options">
-          <div className="chat-mode-picker" aria-label="Recommendation mode">
-            {[
-              ["auto", "Auto"],
-              ["discover", "Discover"],
-              ["plan", "Plan"],
-            ].map(([value, label]) => (
+            <div className="chatbot-session-actions">
               <button
-                className={mode === value ? "is-active" : ""}
-                key={value}
+                className={`chat-icon-button ${showHistory ? "is-active" : ""}`}
                 type="button"
-                disabled={sending}
-                onClick={() => setMode(value)}
+                title="Conversation history"
+                aria-label="Conversation history"
+                onClick={() => setShowHistory((current) => !current)}
               >
-                {label}
+                <Icon name="history" />
               </button>
-            ))}
-          </div>
-          <label className="chat-radius">
-            <span>Radius</span>
-            <select
-              value={radiusKm}
-              disabled={sending}
-              onChange={(event) => setRadiusKm(event.target.value)}
-            >
-              {[2, 5, 10, 15, 25].map((radius) => (
-                <option key={radius} value={radius}>
-                  {radius} km
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+              <button
+                className="chat-icon-button"
+                type="button"
+                title={pageTrip ? `New chat for ${pageTrip.title}` : "New general chat"}
+                aria-label="New conversation"
+                disabled={sending}
+                onClick={handleNewConversation}
+              >
+                <Icon name="plus" />
+              </button>
+              <button
+                className="chat-icon-button"
+                type="button"
+                title="Minimize assistant"
+                aria-label="Minimize assistant"
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowHistory(false);
+                }}
+              >
+                <Icon name="close" />
+              </button>
+            </div>
+          </header>
 
-        <div className="chat-location-row">
-          <button
-            className={`chat-location-button ${deviceLocation ? "is-active" : ""}`}
-            type="button"
-            disabled={requestingLocation || sending}
-            onClick={handleUseLocation}
-          >
-            <Icon name={deviceLocation ? "check" : "location"} size={16} />
-            {requestingLocation
-              ? "Locating..."
-              : deviceLocation
-                ? "Current location"
-                : "Use my location"}
-          </button>
-          <span>or</span>
-          <input
-            type="text"
-            value={manualLocation}
-            maxLength={250}
-            disabled={sending}
-            placeholder={`Enter a place, e.g. ${trip.destination}`}
-            aria-label="Manual search location"
-            onChange={(event) => {
-              setManualLocation(event.target.value);
-              if (event.target.value) {
-                setDeviceLocation(null);
-                setLocationStatus("");
-              }
-            }}
-          />
-        </div>
-        {locationStatus && <p className="chat-location-status">{locationStatus}</p>}
+          {showHistory ? (
+            <div className="chat-history-view">
+              <div className="chat-history-heading">
+                <div>
+                  <p className="chatbot-eyebrow">Conversations</p>
+                  <h3>Chat history</h3>
+                </div>
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  onClick={handleNewConversation}
+                >
+                  <Icon name="plus" size={15} />
+                  New chat
+                </button>
+              </div>
 
-        <div className="chat-message-input">
-          <textarea
-            value={message}
-            maxLength={1000}
-            rows={2}
-            disabled={sending}
-            placeholder="Ask for nearby ideas or a plan..."
-            onChange={(event) => setMessage(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                handleSubmit(event);
-              }
-            }}
-          />
-          <button
-            className="chat-send-button"
-            type="submit"
-            disabled={!message.trim() || sending || requestingLocation}
-            aria-label="Send message"
-          >
-            <Icon name="send" size={20} />
-          </button>
-        </div>
+              {loadingSessions ? (
+                <div className="chat-history-empty">Loading conversations...</div>
+              ) : sessions.length === 0 ? (
+                <div className="chat-history-empty">
+                  <Icon name="history" size={25} />
+                  <strong>No conversations yet</strong>
+                  <span>Start a chat and it will appear here.</span>
+                </div>
+              ) : (
+                <div className="chat-history-list">
+                  {sessions.map((session) => (
+                    <div
+                      className={`chat-history-item ${
+                        String(session.id) === String(activeSessionId)
+                          ? "is-active"
+                          : ""
+                      }`}
+                      key={session.id}
+                    >
+                      <button
+                        className="chat-history-select"
+                        type="button"
+                        onClick={() => {
+                          setActiveSessionId(session.id);
+                          setShowHistory(false);
+                        }}
+                      >
+                        <span className="chat-history-icon">
+                          <Icon name="chat" size={17} />
+                        </span>
+                        <span className="chat-history-copy">
+                          <strong>{session.title}</strong>
+                          <small>
+                            <span>{session.trip_title || "General"}</span>
+                            {formatSessionDate(session.updated_at)}
+                          </small>
+                        </span>
+                      </button>
+                      <button
+                        className="chat-history-delete"
+                        type="button"
+                        aria-label={`Delete ${session.title}`}
+                        onClick={() => handleDeleteConversation(session.id)}
+                      >
+                        <Icon name="trash" size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="chatbot-panel-main">
+              <div className="chatbot-conversation" aria-live="polite">
+                {(loadingSessions || loadingMessages) && (
+                  <div className="chat-loading-state">
+                    <span className="chat-typing-dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    Loading your conversation...
+                  </div>
+                )}
 
-        <div className="chatbot-composer-footer">
-          <span>{message.length}/1000</span>
-          <span>
-            Place data ©{" "}
-            <a
-              href="https://www.openstreetmap.org/copyright"
-              target="_blank"
-              rel="noreferrer"
-            >
-              OpenStreetMap contributors
-            </a>
-          </span>
-        </div>
+                {!loadingSessions && !loadingMessages && !hasConversation && (
+                  <div className="chat-welcome">
+                    <span className="chat-welcome-icon">
+                      <Icon name="sparkle" size={23} />
+                    </span>
+                    <h3>What can I find for you?</h3>
+                    <p>
+                      Search for food, services, shopping, transport, attractions,
+                      or build a plan
+                      {pageTrip ? ` for ${pageTrip.title}` : ""}.
+                    </p>
+                    <div className="chat-suggestions">
+                      {promptSuggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => setMessage(suggestion)}
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-        {error && (
-          <div className="chat-error-banner" role="alert">
-            <span>{error}</span>
-            <button type="button" onClick={() => setError("")}>
-              Dismiss
-            </button>
-          </div>
-        )}
-      </form>
-    </section>
+                {!loadingMessages &&
+                  messages.map((chatMessage) => {
+                    const responseData =
+                      chatMessage.response_data || chatMessage.responseData;
+                    return (
+                      <div
+                        className={`chat-message chat-message-${chatMessage.role}`}
+                        key={chatMessage.id}
+                      >
+                        <div className="chat-message-label">
+                          {chatMessage.role === "assistant" ? "Planova AI" : "You"}
+                        </div>
+                        <div className="chat-bubble">
+                          <p>{chatMessage.content}</p>
+                        </div>
+                        {chatMessage.role === "assistant" && responseData?.items && (
+                          <RecommendationGroup
+                            data={responseData}
+                            trips={trips}
+                            defaultTripId={activeSession?.trip_id || pageTripId}
+                            currentTripId={pageTripId}
+                            currentItineraries={pageItineraries}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+
+                {sending && (
+                  <div className="chat-message chat-message-assistant">
+                    <div className="chat-message-label">Planova AI</div>
+                    <div className="chat-bubble chat-bubble-loading">
+                      <span className="chat-typing-dots" aria-label="Finding places">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                      Finding places and checking routes...
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <form className="chatbot-composer" onSubmit={handleSubmit}>
+                <div className="chatbot-options">
+                  <div className="chat-mode-picker" aria-label="Recommendation mode">
+                    {[
+                      ["auto", "Auto"],
+                      ["discover", "Discover"],
+                      ["plan", "Plan"],
+                    ].map(([value, label]) => (
+                      <button
+                        className={mode === value ? "is-active" : ""}
+                        key={value}
+                        type="button"
+                        disabled={sending}
+                        onClick={() => setMode(value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="chat-radius">
+                    <span>Radius</span>
+                    <select
+                      value={radiusKm}
+                      disabled={sending}
+                      onChange={(event) => setRadiusKm(event.target.value)}
+                    >
+                      {[2, 5, 10, 15, 25].map((radius) => (
+                        <option key={radius} value={radius}>
+                          {radius} km
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="chat-location-row">
+                  <button
+                    className={`chat-location-button ${
+                      deviceLocation ? "is-active" : ""
+                    }`}
+                    type="button"
+                    disabled={requestingLocation || sending}
+                    onClick={handleUseLocation}
+                  >
+                    <Icon
+                      name={deviceLocation ? "check" : "location"}
+                      size={16}
+                    />
+                    {requestingLocation
+                      ? "Locating..."
+                      : deviceLocation
+                        ? "Current location"
+                        : "Use my location"}
+                  </button>
+                  <span>or</span>
+                  <input
+                    type="text"
+                    value={manualLocation}
+                    maxLength={250}
+                    disabled={sending}
+                    placeholder={`Enter a place, e.g. ${
+                      pageTrip?.destination || "Bugis, Singapore"
+                    }`}
+                    aria-label="Manual search location"
+                    onChange={(event) => {
+                      setManualLocation(event.target.value);
+                      if (event.target.value) {
+                        setDeviceLocation(null);
+                        setLocationStatus("");
+                      }
+                    }}
+                  />
+                </div>
+                {locationStatus && (
+                  <p className="chat-location-status">{locationStatus}</p>
+                )}
+
+                <div className="chat-message-input">
+                  <textarea
+                    value={message}
+                    maxLength={1000}
+                    rows={2}
+                    disabled={sending}
+                    placeholder="Ask for nearby places, help, or a plan..."
+                    onChange={(event) => setMessage(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        handleSubmit(event);
+                      }
+                    }}
+                  />
+                  <button
+                    className="chat-send-button"
+                    type="submit"
+                    disabled={!message.trim() || sending || requestingLocation}
+                    aria-label="Send message"
+                  >
+                    <Icon name="send" size={20} />
+                  </button>
+                </div>
+
+                <div className="chatbot-composer-footer">
+                  <span>{message.length}/1000</span>
+                  <span>
+                    Place data ©{" "}
+                    <a
+                      href="https://www.openstreetmap.org/copyright"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      OpenStreetMap contributors
+                    </a>
+                  </span>
+                </div>
+
+                {error && (
+                  <div className="chat-error-banner" role="alert">
+                    <span>{error}</span>
+                    <button type="button" onClick={() => setError("")}>
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+              </form>
+            </div>
+          )}
+        </section>
+      )}
+    </div>
   );
 }
 

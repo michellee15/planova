@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issue Findings"
+  short_description: "Investigate a GitHub issue against the codebase and post findings"
+  default_prompt: "Use $gh-verify-and-comment-issue to investigate a GitHub issue against the current codebase, verify the actual behavior, and post a concise findings comment when asked."
