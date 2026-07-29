@@ -14,11 +14,11 @@ function ExpenseList({
   onEditSplitMemberChange,
 }) {
   if (expenses.length === 0) {
-    return <p>No expenses yet.</p>;
+    return <p className="empty-state">No expenses yet—your first one will appear here.</p>;
   }
 
   return (
-    <div>
+    <div className="expense-list">
       {expenses.map((expense) => (
         <ExpenseItem
           key={expense.id}

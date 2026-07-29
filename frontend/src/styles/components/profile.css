@@ -1,32 +1,109 @@
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
+.user-menu {
+  position: relative;
 }
 
-.user-menu {
+.user-menu summary {
   display: flex;
+  min-width: 0;
+  list-style: none;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  background: white;
+  gap: 0.55rem;
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem 0.3rem 0.3rem;
+  color: var(--text-heading);
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.user-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.user-menu summary:hover,
+.user-menu[open] summary {
+  background: var(--surface-soft);
+}
+
+.user-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--peach), #f4bca7);
+  box-shadow: var(--shadow-sm);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 800;
+  place-items: center;
+}
+
+.user-avatar-large {
+  width: 42px;
+  height: 42px;
+  font-size: 1rem;
+}
+
+.user-menu-popover {
+  position: absolute;
+  top: calc(100% + 0.65rem);
+  right: 0;
+  width: 260px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.7rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
 }
 
 .user-menu-info {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  padding: 0.45rem;
+  align-items: center;
+  gap: 0.7rem;
 }
 
-.user-menu-name,
+.user-menu-info strong,
 .user-menu-email {
   display: block;
 }
 
-.user-menu button {
-  cursor: pointer;
+.user-menu-email {
+  max-width: 160px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu-popover button {
+  display: flex;
+  width: 100%;
+  margin-top: 0.55rem;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.7rem 0.75rem;
+  align-items: center;
+  gap: 0.55rem;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.user-menu-popover button:hover {
+  background: #fbe3e6;
+}
+
+@media (max-width: 520px) {
+  .user-menu-name {
+    display: none;
+  }
+
+  .user-menu summary {
+    padding-right: 0.3rem;
+  }
 }

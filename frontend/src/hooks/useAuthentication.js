@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import { useNavigate,useLocation } from "react-router-dom";
 import {registerUser, loginUser} from "../api/authenticationApi";
 
@@ -31,7 +31,7 @@ function useAuthentication() {
       }, 1000);
     } catch (error) {
       console.error("Error logging in: ", error);
-      setError("Loggin failed.")
+      setError("Login failed. Please check your details and try again.")
     } finally {
       setLoading(false);
     }

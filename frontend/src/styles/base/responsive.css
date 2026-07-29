@@ -1,46 +1,13 @@
-/*  some codes (eg., syntaxes and designs) are assisted by claude.ai
-this css file used to adjust the screen size/layout based on device size*/
-
-@media (max-width: 1024px) {
-  main {
-    padding: 32px 20px 48px;
-  }
-  main > section {
-    grid-template-columns: 1fr;
-  }
-  main > section article:has(input) {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 760px) {
   .app {
     padding: 1rem;
   }
-  .section-card {
-    border-radius: 10px;
-    padding: 1rem;
-  }
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
+
   .item-card-header {
     flex-direction: column;
   }
+
   .itinerary-timeline {
     padding-left: 1rem;
-  }
-  .overview-grid {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 1rem;
-  }
-  .btn {
-    width: 100%;
-    text-align: center;
-  }
-  .form-actions,
-  .item-actions {
-    flex-direction: column;
-    align-items: stretch;
   }
 }

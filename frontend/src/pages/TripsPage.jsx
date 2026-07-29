@@ -1,245 +1,420 @@
-import {Link} from "react-router-dom";
-import {useEffect, useState} from "react";
-import UserMenu from "../components/users/UserMenu";
-import {createTrip, deleteTrip, updateTrip, getTrips} from "../api/tripApi";
+import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import {
+  createTrip,
+  deleteTrip,
+  getTrips,
+  updateTrip,
+} from "../api/tripApi";
+import Icon from "../components/ui/Icon";
+import Modal from "../components/ui/Modal";
+
+const emptyForm = {
+  title: "",
+  destination: "",
+  start_date: "",
+  end_date: "",
+  total_budget: "",
+  currency: "SGD",
+  num_of_people: 1,
+};
+
+const paletteNames = ["lavender", "peach", "mint", "sky"];
+
+function displayDate(date) {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function TripForm({ formData, onChange, onSubmit, onCancel, error, isEditing }) {
+  return (
+    <form className="trip-modal-form" onSubmit={onSubmit}>
+      <div className="form-grid">
+        <div className="form-field full-width">
+          <label htmlFor="trip-title">Trip name</label>
+          <input
+            id="trip-title"
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={onChange}
+            placeholder="e.g. Spring in Kyoto"
+            required
+          />
+        </div>
+
+        <div className="form-field full-width">
+          <label htmlFor="trip-destination">Destination</label>
+          <input
+            id="trip-destination"
+            type="text"
+            name="destination"
+            value={formData.destination}
+            onChange={onChange}
+            placeholder="City or country"
+            required
+          />
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="trip-start">Start date</label>
+          <input
+            id="trip-start"
+            type="date"
+            name="start_date"
+            value={formData.start_date}
+            onChange={onChange}
+          />
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="trip-end">End date</label>
+          <input
+            id="trip-end"
+            type="date"
+            name="end_date"
+            value={formData.end_date}
+            onChange={onChange}
+            min={formData.start_date || undefined}
+          />
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="trip-budget">Budget</label>
+          <input
+            id="trip-budget"
+            type="number"
+            min="0"
+            step="0.01"
+            name="total_budget"
+            value={formData.total_budget}
+            onChange={onChange}
+            placeholder="Optional"
+          />
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="trip-currency">Currency</label>
+          <input
+            id="trip-currency"
+            type="text"
+            maxLength="3"
+            name="currency"
+            value={formData.currency}
+            onChange={onChange}
+            placeholder="SGD"
+          />
+        </div>
+
+        <div className="form-field full-width">
+          <label htmlFor="trip-people">Number of travellers</label>
+          <input
+            id="trip-people"
+            type="number"
+            min="1"
+            name="num_of_people"
+            value={formData.num_of_people}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      {error && <p className="form-error">{error}</p>}
+
+      <div className="trip-modal-actions">
+        <button className="btn btn-secondary" type="button" onClick={onCancel}>
+          Cancel
+        </button>
+        <button className="btn btn-primary" type="submit">
+          <Icon name={isEditing ? "check" : "plus"} size={17} />
+          {isEditing ? "Save changes" : "Create trip"}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 function TripsPage() {
   const [trips, setTrips] = useState([]);
-  const [title, setTitle] = useState("");
-  const [destination, setDestination] = useState("");
   const [loading, setLoading] = useState(true);
-
-  const [editingTripId, setEditingTripId] = useState(null);
-  const [editFormData, setEditFormData] = useState({
-    title: "", destination: "", start_date: "", end_date: "", currency: "SGD", num_of_people: 1,
-  });
-
-  const loadTrips = async () => {
-    try {
-      const data = await getTrips();
-      setTrips(data);
-    } catch (error) {
-      console.error("error loading trips: ", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingTrip, setEditingTrip] = useState(null);
+  const [formData, setFormData] = useState(emptyForm);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    loadTrips();
+    let active = true;
+    getTrips()
+      .then((data) => {
+        if (active) setTrips(data);
+      })
+      .catch((error) => console.error("Error loading trips:", error))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const upcomingTrips = useMemo(
+    () =>
+      trips.filter(
+        (trip) => !trip.end_date || new Date(trip.end_date) >= new Date(),
+      ).length,
+    [trips],
+  );
 
-    if (!title || !destination) { return; }
-
-    try {
-      const newTrip = await createTrip({title, destination, currency: "SGD", num_of_people: 1});
-      setTrips([newTrip, ...trips]);
-      setTitle("");
-      setDestination("");
-    } catch (error) {
-      console.error("Error creating trip: ", error);
-    }
-  };
-  
-  const handleDeleteTrip = async (id) => {
-    try {
-      await deleteTrip(id);
-      setTrips((prevTrip) => prevTrip.filter((trip) => trip.id !== id));
-    } catch (error) {
-      console.error("Error deleting trip: ", error);
-    }
+  const closeModal = () => {
+    setShowCreateModal(false);
+    setEditingTrip(null);
+    setFormData(emptyForm);
+    setFormError("");
   };
 
-  const handleStartEdit = (trip) => {
-    setEditingTripId(trip.id);
-    setEditFormData({
-      title: trip.title || "", 
-      destination: trip.destination || "", 
-      start_date: trip.start_date ? trip.start_date.slice(0,10) : "", //slice(0,10) to ensure date is in YYYY-MM-DD format after postgres returns date
-      end_date: trip.end_date ? trip.end_date.slice(0,10) : "",
-      total_budget: trip.total_budget || "",
+  const openCreateModal = () => {
+    setFormData(emptyForm);
+    setFormError("");
+    setShowCreateModal(true);
+  };
+
+  const openEditModal = (trip) => {
+    setFormData({
+      title: trip.title || "",
+      destination: trip.destination || "",
+      start_date: trip.start_date?.slice(0, 10) || "",
+      end_date: trip.end_date?.slice(0, 10) || "",
+      total_budget: trip.total_budget ?? "",
       currency: trip.currency || "SGD",
       num_of_people: trip.num_of_people || 1,
     });
+    setFormError("");
+    setEditingTrip(trip);
   };
 
-  const handleEditChange = (event) => {
-    const {name, value} = event.target;
-    setEditFormData((prevData) => ({
-      ...prevData,
-      [name] : value,
-    }));
+  const handleFormChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
   };
 
-  const handleCancelEdit = () => {
-    setEditingTripId(null);
-    setEditFormData({
-      title: "", destination: "", start_date: "", end_date: "", total_budget: "", currency: "SGD", num_of_people: 1,
-    });
-  };
+  const normaliseForm = () => ({
+    ...formData,
+    currency: formData.currency.trim().toUpperCase() || "SGD",
+    total_budget:
+      formData.total_budget === "" ? null : Number(formData.total_budget),
+    num_of_people: Number(formData.num_of_people) || 1,
+    start_date: formData.start_date || null,
+    end_date: formData.end_date || null,
+  });
 
-  const handleUpdateTrip = async (id) => {
-    if (!editFormData.title || !editFormData.destination) return;
-
+  const handleCreate = async (event) => {
+    event.preventDefault();
+    setFormError("");
     try {
-      const updatedTrip = await updateTrip(id, {
-        ...editFormData,
-        total_budget: editFormData.total_budget ? Number(editFormData.total_budget) : null,
-        num_of_people: Number(editFormData.num_of_people) || 1,
-      });
-      await loadTrips();
-      handleCancelEdit();
+      const newTrip = await createTrip(normaliseForm());
+      setTrips((current) => [newTrip, ...current]);
+      closeModal();
     } catch (error) {
-      console.error("Error updating trip: ", error);
+      console.error("Error creating trip:", error);
+      setFormError("We couldn’t create this trip. Please try again.");
     }
   };
 
-  if (loading) {
-    return <p>Loading trips ...</p>
-  }
+  const handleUpdate = async (event) => {
+    event.preventDefault();
+    setFormError("");
+    try {
+      const updatedTrip = await updateTrip(editingTrip.id, normaliseForm());
+      setTrips((current) =>
+        current.map((trip) =>
+          String(trip.id) === String(editingTrip.id) ? updatedTrip : trip,
+        ),
+      );
+      closeModal();
+    } catch (error) {
+      console.error("Error updating trip:", error);
+      setFormError("We couldn’t save these changes. Please try again.");
+    }
+  };
+
+  const handleDelete = async (trip) => {
+    const confirmed = window.confirm(
+      `Delete “${trip.title}”? This can’t be undone.`,
+    );
+    if (!confirmed) return;
+    try {
+      await deleteTrip(trip.id);
+      setTrips((current) =>
+        current.filter((item) => String(item.id) !== String(trip.id)),
+      );
+    } catch (error) {
+      console.error("Error deleting trip:", error);
+    }
+  };
 
   return (
-    <main>
-      <header className="page-header">
+    <main className="trips-page">
+      <section className="trips-hero">
         <div>
-          <h1>Planova</h1>
-          <h2>My Trips</h2>
+          <p className="page-eyebrow">
+            <Icon name="sparkle" size={15} />
+            Your little travel world
+          </p>
+          <h1>Where are we going next?</h1>
+          <p className="trips-hero-copy">
+            Keep every plan, shared cost, and happy idea in one cosy place.
+          </p>
+          <div className="trip-summary-pills">
+            <span>
+              <strong>{trips.length}</strong> total trips
+            </span>
+            <span>
+              <strong>{upcomingTrips}</strong> upcoming
+            </span>
+          </div>
         </div>
-        <UserMenu />
-      </header>
+        <button className="btn btn-primary trips-create-button" type="button" onClick={openCreateModal}>
+          <Icon name="plus" size={18} />
+          Plan a new trip
+        </button>
+      </section>
 
-      <form onSubmit={handleSubmit}>
-        <input 
-          type="text"
-          placeholder="Trip title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-        />
-        <input 
-          type="text"
-          placeholder="Destination"
-          value={destination}
-          onChange={(event) => setDestination(event.target.value)}
-        />
-        <button type="submit">Create Trip</button>
-      </form>
+      <section className="trips-content" aria-labelledby="trips-heading">
+        <div className="trips-section-heading">
+          <div>
+            <p className="page-eyebrow">Your journeys</p>
+            <h2 id="trips-heading">My trips</h2>
+          </div>
+          {trips.length > 0 && <span>{trips.length} saved</span>}
+        </div>
 
-      <section>
-      {trips.length === 0 ? (
-        <p>No trips yet.</p>
-      ) : (
-        trips.map((trip) => {
-          const isEditing = String(editingTripId) === String(trip.id);
+        {loading ? (
+          <div className="trip-loading">
+            <span className="trip-loading-dot" />
+            Gathering your travel plans…
+          </div>
+        ) : trips.length === 0 ? (
+          <div className="trips-empty">
+            <span className="trips-empty-icon">
+              <Icon name="map" size={34} />
+            </span>
+            <h3>Your travel journal is waiting</h3>
+            <p>Start with a destination you’ve been daydreaming about.</p>
+            <button className="btn btn-primary" type="button" onClick={openCreateModal}>
+              <Icon name="plus" size={17} />
+              Create your first trip
+            </button>
+          </div>
+        ) : (
+          <div className="trip-grid">
+            {trips.map((trip, index) => {
+              const startDate = displayDate(trip.start_date);
+              const endDate = displayDate(trip.end_date);
+              const palette = paletteNames[index % paletteNames.length];
 
-          return (
-            <article key={trip.id}>
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    name="title"
-                    value={editFormData.title}
-                    onChange={handleEditChange}
-                    placeholder="Trip title"
-                  />
+              return (
+                <article className={`trip-card trip-card-${palette}`} key={trip.id}>
+                  <div className="trip-card-visual">
+                    <span className="trip-card-sun" />
+                    <span className="trip-card-hill trip-card-hill-back" />
+                    <span className="trip-card-hill trip-card-hill-front" />
+                    <span className="trip-card-pin">
+                      <Icon name="pin" size={18} />
+                    </span>
+                    <details className="trip-card-menu">
+                      <summary aria-label={`Actions for ${trip.title}`}>
+                        <Icon name="more" size={19} />
+                      </summary>
+                      <div>
+                        <button type="button" onClick={() => openEditModal(trip)}>
+                          <Icon name="edit" size={16} />
+                          Edit trip
+                        </button>
+                        <button className="danger" type="button" onClick={() => handleDelete(trip)}>
+                          <Icon name="trash" size={16} />
+                          Delete
+                        </button>
+                      </div>
+                    </details>
+                  </div>
 
-                  <input
-                    type="text"
-                    name="destination"
-                    value={editFormData.destination}
-                    onChange={handleEditChange}
-                    placeholder="Destination"
-                  />
+                  <div className="trip-card-body">
+                    <span className="trip-destination">
+                      <Icon name="pin" size={14} />
+                      {trip.destination}
+                    </span>
+                    <h3>{trip.title}</h3>
 
-                  <input
-                    type="date"
-                    name="start_date"
-                    value={editFormData.start_date}
-                    onChange={handleEditChange}
-                  />
+                    <div className="trip-card-meta">
+                      <span>
+                        <Icon name="calendar" size={16} />
+                        {startDate && endDate
+                          ? `${startDate} – ${endDate}`
+                          : startDate || "Dates to be decided"}
+                      </span>
+                      <span>
+                        <Icon name="users" size={16} />
+                        {trip.num_of_people || 1} traveller
+                        {Number(trip.num_of_people) === 1 ? "" : "s"}
+                      </span>
+                      <span>
+                        <Icon name="wallet" size={16} />
+                        {trip.total_budget
+                          ? `${trip.currency || "SGD"} ${Number(trip.total_budget).toLocaleString()}`
+                          : "Budget not set"}
+                      </span>
+                    </div>
 
-                  <input
-                    type="date"
-                    name="end_date"
-                    value={editFormData.end_date}
-                    onChange={handleEditChange}
-                  />
+                    <Link className="trip-card-link" to={`/trips/${trip.id}`}>
+                      View trip
+                      <Icon name="arrowRight" size={17} />
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
-                  <input
-                    type="number"
-                    name="total_budget"
-                    value={editFormData.total_budget}
-                    onChange={handleEditChange}
-                    placeholder="Total budget"
-                  />
-
-                  <input
-                    type="text"
-                    name="currency"
-                    value={editFormData.currency}
-                    onChange={handleEditChange}
-                    placeholder="Currency"
-                  />
-
-                  <input
-                    type="number"
-                    name="num_of_people"
-                    value={editFormData.num_of_people}
-                    onChange={handleEditChange}
-                    placeholder="Number of people"
-                    min="1"
-                  />
-
-                  <button type="button" onClick={() => handleUpdateTrip(trip.id)}>
-                    Save
-                  </button>
-
-                  <button type="button" onClick={handleCancelEdit}>
-                    Cancel
-                  </button>
-                </>
-              ) : ( 
-                <>
-                  <h3>{trip.title}</h3>
-                  <p>{trip.destination}</p>
-
-                  {trip.start_date && (
-                    <p>Start date: {trip.start_date.slice(0, 10)}</p>
-                  )}
-
-                  {trip.end_date && (
-                    <p>End date: {trip.end_date.slice(0, 10)}</p>
-                  )}
-
-                  {trip.total_budget && (
-                    <p>
-                      Budget: {trip.currency} {trip.total_budget}
-                    </p>
-                  )}
-
-                  <p>People: {trip.num_of_people}</p>
-                  
-                  <Link to={`/trips/${trip.id}`}><button type="button">View Details</button></Link>
-
-                  <button type="button" onClick={() => handleStartEdit(trip)}>
-                    Edit
-                  </button>
-
-                  <button type="button" onClick={() => handleDeleteTrip(trip.id)}>
-                    Delete
-                  </button>
-                </>
-              )}
-            </article>
-          );
-        })
+      {showCreateModal && (
+        <Modal
+          title="Create a new trip"
+          subtitle="Add the basics now—you can fill in the lovely details later."
+          onClose={closeModal}
+        >
+          <TripForm
+            formData={formData}
+            onChange={handleFormChange}
+            onSubmit={handleCreate}
+            onCancel={closeModal}
+            error={formError}
+          />
+        </Modal>
       )}
-    </section>
+
+      {editingTrip && (
+        <Modal
+          title="Edit trip"
+          subtitle={`Make a few changes to ${editingTrip.title}.`}
+          onClose={closeModal}
+        >
+          <TripForm
+            formData={formData}
+            onChange={handleFormChange}
+            onSubmit={handleUpdate}
+            onCancel={closeModal}
+            error={formError}
+            isEditing
+          />
+        </Modal>
+      )}
     </main>
-  )
+  );
 }
 
 export default TripsPage;
