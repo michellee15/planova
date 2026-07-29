@@ -1,70 +1,92 @@
-/* for all shared buttons, styling and actions for each button */
 .form-actions,
 .item-actions {
   display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  align-items: center;
   margin-top: 0.9rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 
 .btn {
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 14px;
+  display: inline-flex;
+  min-height: 40px;
   border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 0.65rem 1.1rem;
+  border-radius: 12px;
+  padding: 0.68rem 1rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    color 0.15s,
-    transform 0.1s;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 750;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn svg {
+  flex: 0 0 auto;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
 }
 
 .btn:active {
-  transform: translateY(1px);
+  transform: translateY(0);
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 3px solid rgba(123, 104, 201, 0.2);
   outline-offset: 2px;
 }
 
 .btn-primary {
+  background: var(--primary);
+  box-shadow: 0 7px 16px rgba(123, 104, 201, 0.2);
   color: #fff;
-  background: var(--accent);
 }
 
 .btn-primary:hover {
-  background: color-mix(
-    in srgb,
-    var(--accent) 88%,
-    black
-  );
+  background: var(--primary-hover);
 }
 
 .btn-secondary {
-  color: var(--text);
-  background: transparent;
   border-color: var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .btn-secondary:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-soft {
+  background: var(--primary-soft);
+  color: var(--primary);
 }
 
 .btn-danger {
+  background: var(--danger-soft);
   color: var(--danger);
-  background: var(--danger-bg);
 }
 
 .btn-danger:hover {
-  background: color-mix(
-    in srgb,
-    var(--danger) 14%,
-    transparent
-  );
+  background: #fbe1e5;
+}
+
+.icon-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  place-items: center;
+}
+
+.icon-button:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
 }

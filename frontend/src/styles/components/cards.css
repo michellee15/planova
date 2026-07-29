@@ -3,13 +3,13 @@ for all shared sections */
 .section-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.35rem;
   transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .section-card:hover {
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
   border-color: var(--border-strong);
 }
 

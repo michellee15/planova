@@ -1,86 +1,61 @@
+import Icon from "../ui/Icon";
+
+function formatDate(dateString) {
+  if (!dateString) return "Not set";
+  return new Date(dateString).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function TripOverview({ trip }) {
-  const startDate = new Date(trip.start_date);
-  const endDate = new Date(trip.end_date);
-  const tripDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
+  const startDate = trip.start_date ? new Date(trip.start_date) : null;
+  const endDate = trip.end_date ? new Date(trip.end_date) : null;
+  const validDates =
+    startDate &&
+    endDate &&
+    !Number.isNaN(startDate.getTime()) &&
+    !Number.isNaN(endDate.getTime());
+  const tripDays = validDates
+    ? Math.max(
+        1,
+        Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1,
+      )
+    : "—";
+
+  const stats = [
+    { icon: "calendar", label: "Starts", value: formatDate(trip.start_date) },
+    { icon: "calendar", label: "Ends", value: formatDate(trip.end_date) },
+    { icon: "clock", label: "Duration", value: tripDays === "—" ? "Not set" : `${tripDays} days` },
+    {
+      icon: "users",
+      label: "Travellers",
+      value: `${trip.num_of_people || 1} people`,
+    },
+  ];
 
   return (
     <section className="dashboard-card overview-card">
       <div className="dashboard-card-header">
         <div>
-          <p className="dashboard-card-eyebrow">
-            At a glance
-          </p>
-
-          <h2>Trip Overview</h2>
+          <p className="dashboard-card-eyebrow">At a glance</p>
+          <h2>Trip overview</h2>
         </div>
+        <span className="dashboard-card-icon">
+          <Icon name="overview" size={20} />
+        </span>
       </div>
-
       <div className="overview-stat-grid">
-
-        <div className="overview-stat">
-          <span className="overview-stat-icon">
-            📆
-          </span>
-
-          <span className="overview-stat-label">
-            Start Date
-          </span>
-
-          <span className="overview-stat-value">
-            {formatDate(trip.start_date)}
-          </span>
-        </div>
-
-        <div className="overview-stat">
-          <span className="overview-stat-icon">
-            📆
-          </span>
-
-          <span className="overview-stat-label">
-            End Date
-          </span>
-
-          <span className="overview-stat-value">
-            {formatDate(trip.end_date)}
-          </span>
-        </div>
-
-        <div className="overview-stat">
-          <span className="overview-stat-icon">
-            ⏳
-          </span>
-
-          <span className="overview-stat-label">
-            Days
-          </span>
-
-          <span className="overview-stat-value">
-            {tripDays}
-          </span>
-        </div>
-
-        <div className="overview-stat">
-          <span className="overview-stat-icon">
-            👥
-          </span>
-
-          <span className="overview-stat-label">
-            People
-          </span>
-
-          <span className="overview-stat-value">
-            {trip.num_of_people}
-          </span>
-        </div>
-
+        {stats.map((stat) => (
+          <div className="overview-stat" key={stat.label}>
+            <span className="overview-stat-icon">
+              <Icon name={stat.icon} size={18} />
+            </span>
+            <span className="overview-stat-label">{stat.label}</span>
+            <span className="overview-stat-value">{stat.value}</span>
+          </div>
+        ))}
       </div>
     </section>
   );
