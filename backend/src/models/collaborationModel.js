@@ -18,6 +18,20 @@ const getTripAccess = async (tripId, userId) => {
   return result.rows[0]?.access_role || null;
 };
 
+const getTripOwner = async (tripId) => {
+  const result = await pool.query(
+    `SELECT u.id AS user_id,
+      u.name,
+      u.email,
+      'owner' AS role
+     FROM trips t
+     JOIN users u ON u.id = t.user_id
+     WHERE t.id = $1`,
+    [tripId]
+  );
+  return result.rows[0] || null;
+};
+
 const createInvitation = async ({ tripId, ownerUserId, invitedUserId }) => {
   const result = await pool.query(
     `INSERT INTO trip_collaborators
@@ -188,6 +202,7 @@ const leaveTrip = async (tripId, userId) => {
 
 module.exports = {
   getTripAccess,
+  getTripOwner,
   createInvitation,
   getPendingInvitations,
   acceptInvitation,
