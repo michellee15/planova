@@ -50,6 +50,7 @@ const loginUser = async (req, res) => {
         id: user.id, 
         name: user.name,
         email: user.email,
+        avatar_color: user.avatar_color,
         created_at: user.created_at,
       }
     });

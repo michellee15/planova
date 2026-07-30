@@ -11,6 +11,7 @@ const itineraryRoutes = require("./routes/itineraryRoutes");
 const routeRoutes =  require("./routes/routeRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const collaborationRoutes = require("./routes/collaborationRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api", itineraryRoutes);
 app.use("/api", routeRoutes);
 app.use("/api", chatRoutes);
 app.use("/api", collaborationRoutes);
+app.use("/api/users", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 

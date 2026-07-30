@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { deleteChatSession, getChatSessions } from "../api/chatApi";
+import { updateCurrentUser } from "../api/authenticationApi";
 import Icon from "../components/ui/Icon";
 import { useConfirmDialog } from "../components/ui/confirmDialogContext";
 import {
@@ -39,7 +40,6 @@ function SettingRow({ title, description, children }) {
 
 function SettingsPage() {
   const confirm = useConfirmDialog();
-  const [user, setUser] = useState(readUser);
   const [profileForm, setProfileForm] = useState(() => ({
     name: readUser().name || "",
     email: readUser().email || "",
@@ -47,6 +47,7 @@ function SettingsPage() {
   }));
   const [preferences, setPreferences] = useState(getPreferences);
   const [profileStatus, setProfileStatus] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
   const [settingsStatus, setSettingsStatus] = useState("");
   const [historyStatus, setHistoryStatus] = useState("");
   const [clearingHistory, setClearingHistory] = useState(false);
@@ -61,7 +62,7 @@ function SettingsPage() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  const handleProfileSubmit = (event) => {
+  const handleProfileSubmit = async (event) => {
     event.preventDefault();
     const name = profileForm.name.trim();
     if (!name) {
@@ -69,15 +70,31 @@ function SettingsPage() {
       return;
     }
 
-    const nextUser = {
-      ...user,
-      name,
-      avatar_color: profileForm.avatar_color,
-    };
-    localStorage.setItem("user", JSON.stringify(nextUser));
-    setUser(nextUser);
-    window.dispatchEvent(new CustomEvent("planova:user-updated"));
-    setProfileStatus("Profile updated on this device.");
+    try {
+      setProfileSaving(true);
+      setProfileStatus("");
+      const updatedUser = await updateCurrentUser({
+        name,
+        avatar_color: profileForm.avatar_color,
+      });
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setProfileForm((current) => ({
+        ...current,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        avatar_color: updatedUser.avatar_color,
+      }));
+      window.dispatchEvent(new CustomEvent("planova:user-updated"));
+      setProfileStatus("Profile saved to your account.");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      setProfileStatus(
+        error.response?.data?.message ||
+          "We couldn’t save your profile. Please try again.",
+      );
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
   const handlePreferenceChange = (event) => {
@@ -182,7 +199,7 @@ function SettingsPage() {
                 <p>Personal details</p>
                 <h2>Your profile</h2>
                 <span>
-                  Profile changes are currently stored on this device.
+                  Profile changes are saved to your Planova account.
                 </span>
               </div>
             </div>
@@ -259,9 +276,13 @@ function SettingsPage() {
 
               <div className="settings-form-footer">
                 {profileStatus && <p>{profileStatus}</p>}
-                <button className="btn btn-primary" type="submit">
+                <button
+                  className="btn btn-primary"
+                  type="submit"
+                  disabled={profileSaving}
+                >
                   <Icon name="check" size={17} />
-                  Save profile
+                  {profileSaving ? "Saving…" : "Save profile"}
                 </button>
               </div>
             </form>
