@@ -1,4 +1,5 @@
 import Icon from "../ui/Icon";
+import { getDateRangeHelp } from "../../utils/dateRange";
 
 function ExpenseForm({
   formData,
@@ -6,6 +7,8 @@ function ExpenseForm({
   onSubmit,
   members,
   onSplitMemberChange,
+  dateRange,
+  error,
 }) {
   return (
     <form className="expense-form" onSubmit={onSubmit}>
@@ -89,7 +92,14 @@ function ExpenseForm({
             name="expense_date"
             value={formData.expense_date}
             onChange={onChange}
+            min={dateRange.startDate || undefined}
+            max={dateRange.endDate || undefined}
+            aria-describedby="expense-date-help"
+            disabled={!dateRange.startDate || !dateRange.endDate}
           />
+          <span className="form-help" id="expense-date-help">
+            {getDateRangeHelp(dateRange)}
+          </span>
         </div>
         <fieldset className="split-picker full-width">
           <legend>Split with</legend>
@@ -112,6 +122,11 @@ function ExpenseForm({
           )}
         </fieldset>
       </div>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
       <div className="form-actions">
         <button className="btn btn-primary" type="submit">
           <Icon name="plus" size={17} />

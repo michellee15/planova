@@ -9,11 +9,14 @@ import {
   deleteItinerary,
 } from "../api/itineraryApi";
 import { useConfirmDialog } from "../components/ui/confirmDialogContext";
+import { getDateRangeMessage } from "../utils/dateRange";
 
-function useItineraries(tripId) {
+function useItineraries(tripId, dateRange) {
   const confirm = useConfirmDialog();
 
   const [itineraries, setItineraries] = useState([]);
+  const [itineraryFormError, setItineraryFormError] = useState("");
+  const [editItineraryError, setEditItineraryError] = useState("");
   const [itineraryFormData, setItineraryFormData] = useState({
     title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""
   });
@@ -132,6 +135,7 @@ function useItineraries(tripId) {
 
   const handleItineraryChange = (event) => {
     const {name, value} = event.target;
+    setItineraryFormError("");
     setItineraryFormData((prevData) => ({
       ...prevData, [name]: value,
     }));
@@ -139,7 +143,17 @@ function useItineraries(tripId) {
 
   const handleCreateItinerary = async(event) => {
     event.preventDefault();
+    setItineraryFormError("");
     if (!itineraryFormData.title || !itineraryFormData.itinerary_date) return;
+    const dateError = getDateRangeMessage(
+      itineraryFormData.itinerary_date,
+      dateRange,
+      "Itinerary date",
+    );
+    if (dateError) {
+      setItineraryFormError(dateError);
+      return;
+    }
     try {
       await createItinerary(tripId, {
         title: itineraryFormData.title,
@@ -155,6 +169,7 @@ function useItineraries(tripId) {
       })
     } catch (error){
       console.error("Error creating itinerary: ", error)
+      setItineraryFormError(error.message);
     }
   };
 
@@ -181,13 +196,24 @@ function useItineraries(tripId) {
   //function that saves edited data to backend 
   const handleEditItineraryChange = (event) => {
     const {name, value} = event.target;
+    setEditItineraryError("");
     setEditItineraryFormData((prevData) => ({
       ...prevData, [name]: value,
     }));
   }
 
   const handleEditItinerary = async (itineraryId) => {
+    setEditItineraryError("");
     if (!editItineraryFormData.title || !editItineraryFormData.itinerary_date) return;
+    const dateError = getDateRangeMessage(
+      editItineraryFormData.itinerary_date,
+      dateRange,
+      "Itinerary date",
+    );
+    if (dateError) {
+      setEditItineraryError(dateError);
+      return;
+    }
     try {
       await updateItinerary(itineraryId, {
         title: editItineraryFormData.title,
@@ -202,11 +228,13 @@ function useItineraries(tripId) {
       setEditItineraryFormData({title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""})
     } catch (error) {
       console.error("Error updating itinerary: ", error);
+      setEditItineraryError(error.message);
     }
   }
 
   const handleStartEditItinerary = async (itinerary) => {
     try {
+      setEditItineraryError("");
       setEditingItineraryId(itinerary.id);
       setEditItineraryFormData({
         title: itinerary.title || "",
@@ -222,6 +250,7 @@ function useItineraries(tripId) {
   }
 
   const handleCancelEditItinerary= () => {
+    setEditItineraryError("");
     setEditingItineraryId(null);
     setEditItineraryFormData({title: "", location: "", itinerary_date: "", start_time: "", end_time: "", notes: ""});
   }
@@ -231,7 +260,8 @@ function useItineraries(tripId) {
   }
 
   return {
-    itineraries, setItineraries, itineraryFormData, setItineraryFormData, editingItineraryId, setEditingItineraryId, editItineraryFormData, 
+    itineraries, setItineraries, itineraryFormData, setItineraryFormData, itineraryFormError, editingItineraryId, setEditingItineraryId, editItineraryFormData,
+    editItineraryError,
     setEditItineraryFormData, loadItineraries, handleItineraryChange, handleCreateItinerary, handleDeleteItinerary, handleEditItineraryChange, 
     handleEditItinerary, handleStartEditItinerary, handleCancelEditItinerary, handleFindNearestItinerary, nearestItinerary, locationLoading, 
     locationError, nearestTravelTimes, travelTimesLoading, travelTimesError,

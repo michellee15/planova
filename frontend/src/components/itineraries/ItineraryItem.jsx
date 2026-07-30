@@ -1,3 +1,8 @@
+import {
+  getDateRangeHelp,
+  hasCompleteDateRange,
+} from "../../utils/dateRange";
+
 function ItineraryItem({
   itinerary,
   isEditing,
@@ -7,7 +12,11 @@ function ItineraryItem({
   onEditItinerary,
   onCancelEditItinerary,
   onDeleteItinerary,
+  dateRange,
+  editError,
 }) {
+  const hasTripDates = hasCompleteDateRange(dateRange);
+
   if (isEditing) {
     return (
       <article className="item-card itinerary-card">
@@ -25,6 +34,11 @@ function ItineraryItem({
             name="itinerary_date"
             value={editFormData.itinerary_date}
             onChange={onEditChange}
+            min={dateRange.startDate || undefined}
+            max={dateRange.endDate || undefined}
+            aria-describedby={`itinerary-date-help-${itinerary.id}`}
+            disabled={!hasTripDates}
+            required
           />
 
           <input
@@ -57,13 +71,26 @@ function ItineraryItem({
             onChange={onEditChange}
             placeholder="Notes"
           />
+          <p
+            className="form-help full-width"
+            id={`itinerary-date-help-${itinerary.id}`}
+          >
+            {getDateRangeHelp(dateRange)}
+          </p>
         </div>
+
+        {editError && (
+          <p className="form-error" role="alert">
+            {editError}
+          </p>
+        )}
 
         <div className="form-actions">
           <button
             className="btn btn-secondary"
             type="button"
             onClick={() => onEditItinerary(itinerary.id)}
+            disabled={!hasTripDates}
           >
             Save
           </button>

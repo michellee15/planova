@@ -35,6 +35,15 @@
   transform: translateY(0);
 }
 
+.btn:disabled,
+.btn:disabled:hover {
+  background: var(--border-strong);
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
 .btn:focus-visible {
   outline: 3px solid rgba(123, 104, 201, 0.2);
   outline-offset: 2px;

@@ -1,5 +1,6 @@
 import Icon from "../ui/Icon";
 import { formatDisplayDate } from "../../utils/preferences";
+import { getDateRangeHelp } from "../../utils/dateRange";
 
 function ExpenseItem({
   expense,
@@ -13,6 +14,8 @@ function ExpenseItem({
   onCancelEditExpense,
   onDeleteExpense,
   onEditSplitMemberChange,
+  dateRange,
+  editError,
 }) {
   if (isEditing) {
     return (
@@ -114,7 +117,17 @@ function ExpenseItem({
               name="expense_date"
               value={editFormData.expense_date || ""}
               onChange={onEditChange}
+              min={dateRange.startDate || undefined}
+              max={dateRange.endDate || undefined}
+              aria-describedby={`expense-date-help-${expense.id}`}
+              disabled={!dateRange.startDate || !dateRange.endDate}
             />
+            <span
+              className="form-help"
+              id={`expense-date-help-${expense.id}`}
+            >
+              {getDateRangeHelp(dateRange)}
+            </span>
           </div>
 
           <fieldset className="split-picker full-width">
@@ -138,6 +151,12 @@ function ExpenseItem({
             )}
           </fieldset>
         </div>
+
+        {editError && (
+          <p className="form-error" role="alert">
+            {editError}
+          </p>
+        )}
 
         <div className="expense-edit-actions">
           <button
