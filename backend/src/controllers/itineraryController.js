@@ -1,5 +1,9 @@
 const itineraryModel = require("../models/itineraryModel");
 const { geocodeLocation } = require("../services/geocodeService");
+const {
+  isValidIsoDate,
+  getTripDateConstraintMessage,
+} = require("../utils/dateValidation");
 
 const getItineraryByTripId = async (req, res) => {
   try {
@@ -19,6 +23,11 @@ const createItinerary = async(req, res) => {
     const {tripId} = req.params;
     const {title, location, itinerary_date, start_time, end_time, notes} = req.body;
     if (!title || !itinerary_date) return res.status(400).json({message: "Title and itinerary date are required"});
+    if (!isValidIsoDate(itinerary_date)) {
+      return res
+        .status(400)
+        .json({ message: "Itinerary date must use YYYY-MM-DD format" });
+    }
     if (location) {
       try {
         geocodedLoc = await geocodeLocation(location);
@@ -45,6 +54,10 @@ const createItinerary = async(req, res) => {
     if (!newItinerary) return res.status(404).json({message: "Trip not found"});
     res.status(201).json(newItinerary);
   } catch (error) {
+    const dateConstraintMessage = getTripDateConstraintMessage(error);
+    if (dateConstraintMessage) {
+      return res.status(400).json({ message: dateConstraintMessage });
+    }
     console.error("Error creating itinerary: ", error);
     res.status(500).json({message: "Internal server error"});
   }
@@ -68,7 +81,7 @@ const createItineraryBatch = async (req, res) => {
         item.title.trim().length === 0 ||
         item.title.length > 200 ||
         typeof item.itinerary_date !== "string" ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(item.itinerary_date)
+        !isValidIsoDate(item.itinerary_date)
       ) {
         return res.status(400).json({
           message:
@@ -129,6 +142,10 @@ const createItineraryBatch = async (req, res) => {
     if (!createdItems) return res.status(404).json({ message: "Trip not found" });
     res.status(201).json(createdItems);
   } catch (error) {
+    const dateConstraintMessage = getTripDateConstraintMessage(error);
+    if (dateConstraintMessage) {
+      return res.status(400).json({ message: dateConstraintMessage });
+    }
     console.error("Error creating itinerary batch:", error);
     res.status(500).json({ message: "Internal server error" });
   }
@@ -141,6 +158,11 @@ const updateItinerary = async (req, res) => {
     const {id} = req.params;
     const {title, location, itinerary_date, start_time, end_time, notes } = req.body;
     if (!title || !itinerary_date) return res.status(400).json({message: "Title and itinerary date are required"});
+    if (!isValidIsoDate(itinerary_date)) {
+      return res
+        .status(400)
+        .json({ message: "Itinerary date must use YYYY-MM-DD format" });
+    }
     if (location) {
       try {
         geocodedLoc = await geocodeLocation(location);
@@ -163,6 +185,10 @@ const updateItinerary = async (req, res) => {
     if (!updatedItinerary) return res.status(404).json({message: "Itinerary not found"});
     res.json(updatedItinerary);
   } catch (error) {
+    const dateConstraintMessage = getTripDateConstraintMessage(error);
+    if (dateConstraintMessage) {
+      return res.status(400).json({ message: dateConstraintMessage });
+    }
     console.error("Error updating itinerary", error);
     res.status(500).json({message: "Internal server error"});
   }

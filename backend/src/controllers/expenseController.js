@@ -1,4 +1,8 @@
 const expenseModel = require("../models/expenseModel");
+const {
+  isValidIsoDate,
+  getTripDateConstraintMessage,
+} = require("../utils/dateValidation");
 
 const getExpensesByTripId = async (req, res) => {
   try {
@@ -17,6 +21,11 @@ const createExpense = async (req, res) => {
     const { tripId } = req.params;
     const { title, amount, category, paid_by_member_id, split_member_ids, expense_date } = req.body;
     if (!title || amount === undefined || amount === null) return res.status(400).json({message: "Title and amount are required",});
+    if (expense_date && !isValidIsoDate(expense_date)) {
+      return res
+        .status(400)
+        .json({ message: "Expense date must use YYYY-MM-DD format" });
+    }
 
     const newExpense = await expenseModel.createExpense({
       user_id: req.user.id,
@@ -31,6 +40,10 @@ const createExpense = async (req, res) => {
     if (!newExpense) return res.status(404).json({message: "Trip not found"});
     res.status(201).json(newExpense);
   } catch (error) {
+    const dateConstraintMessage = getTripDateConstraintMessage(error);
+    if (dateConstraintMessage) {
+      return res.status(400).json({ message: dateConstraintMessage });
+    }
     console.error("Error creating expense:", error);
     res.status(500).json({ message: "Internal server error" });
   }
@@ -43,6 +56,11 @@ const updateExpense = async (req, res) => {
     const { title, amount, category, paid_by_member_id, split_member_ids, expense_date } = req.body;
 
     if (!title || amount === undefined || amount === null) return res.status(400).json({message: "Title and amount are required",});
+    if (expense_date && !isValidIsoDate(expense_date)) {
+      return res
+        .status(400)
+        .json({ message: "Expense date must use YYYY-MM-DD format" });
+    }
     
     const updatedExpense = await expenseModel.updateExpense(id, userId, {
       title,
@@ -56,6 +74,10 @@ const updateExpense = async (req, res) => {
     if (!updatedExpense) return res.status(404).json({ message: "Expense not found" });
     res.json(updatedExpense);
   } catch (error) {
+    const dateConstraintMessage = getTripDateConstraintMessage(error);
+    if (dateConstraintMessage) {
+      return res.status(400).json({ message: dateConstraintMessage });
+    }
     console.error("Error updating expense:", error);
     res.status(500).json({ message: "Internal server error" });
   }
