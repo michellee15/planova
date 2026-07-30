@@ -70,6 +70,7 @@ function TripDetailsPage() {
   const tripDateRange = getTripDateRange(trip);
   const {
     accessRole,
+    owner,
     collaborators,
     acceptedCount,
     loading: collaboratorsLoading,
@@ -355,6 +356,7 @@ function TripDetailsPage() {
         <CollaborationModal
           trip={trip}
           accessRole={accessRole || trip.access_role}
+          owner={owner}
           collaborators={collaborators}
           loading={collaboratorsLoading}
           saving={collaboratorsSaving}

@@ -110,11 +110,11 @@ const getCollaborators = async (req, res) => {
       req.user.id
     );
     if (!accessRole) return res.status(404).json({ message: "Trip not found" });
-    const collaborators = await collaborationModel.getCollaborators(
-      tripId,
-      accessRole === "owner"
-    );
-    res.json({ access_role: accessRole, collaborators });
+    const [owner, collaborators] = await Promise.all([
+      collaborationModel.getTripOwner(tripId),
+      collaborationModel.getCollaborators(tripId, accessRole === "owner"),
+    ]);
+    res.json({ access_role: accessRole, owner, collaborators });
   } catch (error) {
     console.error("Error getting trip collaborators:", error);
     res.status(500).json({ message: "Internal server error" });

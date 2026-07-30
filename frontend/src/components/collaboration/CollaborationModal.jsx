@@ -16,6 +16,7 @@ function getInitials(name, email) {
 function CollaborationModal({
   trip,
   accessRole,
+  owner,
   collaborators,
   loading,
   saving,
@@ -41,12 +42,19 @@ function CollaborationModal({
   const acceptedCollaborators = collaborators.filter(
     (collaborator) => collaborator.status === "accepted",
   );
+  const otherAcceptedCollaborators = acceptedCollaborators.filter(
+    (collaborator) =>
+      String(collaborator.user_id) !== String(currentUser?.id),
+  );
   const accepted = isOwner
     ? acceptedCollaborators
-    : acceptedCollaborators.filter(
-        (collaborator) =>
-          String(collaborator.user_id) !== String(currentUser?.id),
-      );
+    : [
+        ...(owner &&
+        String(owner.user_id) !== String(currentUser?.id)
+          ? [owner]
+          : []),
+        ...otherAcceptedCollaborators,
+      ];
   const pending = collaborators.filter(
     (collaborator) => collaborator.status === "pending",
   );
@@ -207,7 +215,13 @@ function CollaborationModal({
                 const isCurrentUser =
                   String(collaborator.user_id) === String(currentUser?.id);
                 return (
-                  <div className="collaborator-row" key={collaborator.id}>
+                  <div
+                    className="collaborator-row"
+                    key={
+                      collaborator.id ||
+                      `${collaborator.role}-${collaborator.user_id}`
+                    }
+                  >
                     <span className="collaborator-avatar" aria-hidden="true">
                       {getInitials(collaborator.name, collaborator.email)}
                     </span>
@@ -219,7 +233,7 @@ function CollaborationModal({
                       <span>{collaborator.email}</span>
                     </div>
                     <span className="collaborator-status is-accepted">
-                      Can edit
+                      {collaborator.role === "owner" ? "Owner" : "Can edit"}
                     </span>
                     {isOwner && (
                       <button

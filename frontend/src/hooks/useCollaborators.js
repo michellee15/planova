@@ -8,6 +8,7 @@ import {
 
 function useCollaborators(tripId) {
   const [accessRole, setAccessRole] = useState(null);
+  const [owner, setOwner] = useState(null);
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -22,6 +23,7 @@ function useCollaborators(tripId) {
         const data = await getTripCollaborators(tripId);
         if (ignore) return;
         setAccessRole(data?.access_role || null);
+        setOwner(data?.owner || null);
         setCollaborators(
           Array.isArray(data?.collaborators) ? data.collaborators : [],
         );
@@ -120,6 +122,7 @@ function useCollaborators(tripId) {
 
   return {
     accessRole,
+    owner,
     collaborators,
     acceptedCount,
     loading,
