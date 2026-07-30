@@ -5,8 +5,17 @@ const getMembersByTripId = async (tripId, user_id) => {
     `SELECT tm.* 
      FROM trip_members tm
      JOIN trips t ON tm.trip_id = t.id
-     WHERE tm.trip_id = $1 
-      AND t.user_id = $2
+     WHERE tm.trip_id = $1
+      AND (
+        t.user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = t.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )
      ORDER BY created_at DESC`,
     [tripId, user_id]
   );
@@ -19,7 +28,16 @@ const createMember = async (data) => {
     `SELECT id
      FROM trips 
      WHERE id = $1
-      AND user_id = $2`,
+      AND (
+        user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = trips.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )`,
     [trip_id, user_id]
   );
   if (tripCheck.rows.length === 0) return null;
@@ -37,7 +55,16 @@ const deleteMember = async (id, user_id) => {
      USING trips t
      WHERE tm.trip_id = t.id
       AND tm.id = $1 
-      AND t.user_id = $2 
+      AND (
+        t.user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = t.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )
       RETURNING tm.*`,
     [id, user_id]
   );

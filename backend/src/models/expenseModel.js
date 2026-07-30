@@ -26,7 +26,16 @@ const getExpensesByTripId = async (tripId, user_id) => {
      LEFT JOIN trip_members sm ON es.member_id = sm.id
      JOIN trips t ON e.trip_id = t.id
      WHERE e.trip_id = $1
-      AND t.user_id = $2
+      AND (
+        t.user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = t.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )
      GROUP BY e.id, payer.name
      ORDER BY e.created_at DESC`,
     [tripId, user_id]
@@ -40,8 +49,17 @@ const createExpense = async (expenseData) => {
   const tripCheck = await pool.query(
     `SELECT id 
      FROM trips 
-     WHERE id = $1 
-      AND user_id = $2`,
+     WHERE id = $1
+      AND (
+        user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = trips.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )`,
     [trip_id, user_id]
   );
   if (tripCheck.rows.length === 0) return null;
@@ -77,7 +95,16 @@ const updateExpense = async (id, user_id, expenseData) => {
      FROM trips t
      WHERE e.trip_id = t.id
        AND e.id = $6
-       AND t.user_id = $7
+       AND (
+         t.user_id = $7
+         OR EXISTS (
+           SELECT 1
+           FROM trip_collaborators tc
+           WHERE tc.trip_id = t.id
+            AND tc.user_id = $7
+            AND tc.status = 'accepted'
+         )
+       )
      RETURNING e.*`,
     [title, amount, category, paid_by_member_id, expense_date, id, user_id]
   );
@@ -100,7 +127,16 @@ const deleteExpense = async (id,  user_id) => {
      USING trips t
      WHERE e.trip_id = t.id
       AND e.id = $1
-      AND t.user_id = $2
+      AND (
+        t.user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = t.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )
      RETURNING e.*`,
     [id, user_id]
   );

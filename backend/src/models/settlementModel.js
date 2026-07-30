@@ -11,7 +11,16 @@ const getSettlementByTripId = async (tripId, user_id) => {
     JOIN trip_members from_member ON sp.from_member_id = from_member.id
     JOIN trip_members to_member ON sp.to_member_id = to_member.id
     WHERE sp.trip_id = $1
-      AND t.user_id = $2
+      AND (
+        t.user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = t.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )
     ORDER BY sp.paid_at DESC`,
     [tripId, user_id]
   );
@@ -24,7 +33,16 @@ const createSettlement = async (data) => {
     `SELECT id
      FROM trips
      WHERE id = $1
-      AND user_id = $2`,
+      AND (
+        user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = trips.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )`,
     [trip_id, user_id]
   );
   if (tripCheck.rows.length === 0) return null;
@@ -43,8 +61,17 @@ const deleteSettlement = async (id, user_id) => {
     `DELETE FROM settlement_payments sp
      USING trips t
      WHERE sp.id = $1
-      AND t.user_id = $2
       AND sp.trip_id = t.id
+      AND (
+        t.user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = t.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )
      RETURNING sp.*`, [id, user_id]
   );
   return result.rows[0];
