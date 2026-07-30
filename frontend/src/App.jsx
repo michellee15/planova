@@ -3,29 +3,34 @@ import TripsPage from "./pages/TripsPage";
 import TripDetailsPage from "./pages/TripDetailsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import SettingsPage from "./pages/SettingsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthenticatedAppLayout from "./components/AuthenticatedAppLayout";
+import { ConfirmDialogProvider } from "./components/ui/ConfirmDialog";
 import './index.css'
 import './App.css'
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage/>} />
-        <Route path="/register" element={<RegisterPage/>} />
-        <Route
-          element={
-            <ProtectedRoute>
-              <AuthenticatedAppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<TripsPage/>} />
-          <Route path="/trips/:id" element={<TripDetailsPage/>} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ConfirmDialogProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage/>} />
+          <Route path="/register" element={<RegisterPage/>} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <AuthenticatedAppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<TripsPage/>} />
+            <Route path="/trips/:id" element={<TripDetailsPage/>} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ConfirmDialogProvider>
   )
 }
 

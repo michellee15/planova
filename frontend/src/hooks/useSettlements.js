@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { getSettlementByTripId, createSettlement, deleteSettlement } from "../api/settlementApi";
+import { useConfirmDialog } from "../components/ui/confirmDialogContext";
 
 function useSettlements(tripId) {
+  const confirm = useConfirmDialog();
   const [settlementPayments, setSettlementPayments] = useState([]);
   const [savingSettlement, setSavingSettlement] = useState(false);
 
@@ -21,7 +23,19 @@ function useSettlements(tripId) {
   };
 
   useEffect(() => {
-    if (tripId) loadSettlements();
+    if (!tripId) return undefined;
+    let active = true;
+    getSettlementByTripId(tripId)
+      .then((data) => {
+        if (active) setSettlementPayments(Array.isArray(data) ? data : []);
+      })
+      .catch((error) => {
+        console.error("Error loading settlement payments: ", error);
+        if (active) setSettlementPayments([]);
+      });
+    return () => {
+      active = false;
+    };
   }, [tripId]);
 
   const handleCreateSettlement = async (settlement) => {
@@ -38,6 +52,15 @@ function useSettlements(tripId) {
   };
 
   const handleUndoSettlement = async (id) => {
+    const shouldUndo = await confirm({
+      title: "Undo this payment?",
+      description:
+        "The payment will be removed and everyone’s balances will be recalculated.",
+      confirmLabel: "Undo payment",
+      destructive: true,
+    });
+    if (!shouldUndo) return;
+
     try {
       await deleteSettlement(id);
       await loadSettlements();

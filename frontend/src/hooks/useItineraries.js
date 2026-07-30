@@ -8,8 +8,10 @@ import {
   updateItinerary,
   deleteItinerary,
 } from "../api/itineraryApi";
+import { useConfirmDialog } from "../components/ui/confirmDialogContext";
 
 function useItineraries(tripId) {
+  const confirm = useConfirmDialog();
 
   const [itineraries, setItineraries] = useState([]);
   const [itineraryFormData, setItineraryFormData] = useState({
@@ -157,6 +159,17 @@ function useItineraries(tripId) {
   };
 
   const handleDeleteItinerary = async (id) => {
+    const itinerary = itineraries.find(
+      (item) => String(item.id) === String(id),
+    );
+    const shouldDelete = await confirm({
+      title: `Delete “${itinerary?.title || "this itinerary item"}”?`,
+      description: "This stop and its saved notes will be permanently removed.",
+      confirmLabel: "Delete itinerary",
+      destructive: true,
+    });
+    if (!shouldDelete) return;
+
     try {
       await deleteItinerary(id);
       await loadItineraries();

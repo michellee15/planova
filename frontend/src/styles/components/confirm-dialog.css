@@ -1,0 +1,64 @@
+.confirm-backdrop {
+  position: fixed;
+  z-index: 1300;
+  inset: 0;
+  display: grid;
+  padding: 1rem;
+  background: rgba(48, 38, 56, 0.4);
+  backdrop-filter: blur(7px);
+  place-items: center;
+}
+
+.confirm-dialog {
+  width: min(410px, 100%);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  animation: modal-in 0.18s ease-out;
+}
+
+.confirm-icon {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 1rem;
+  border-radius: 16px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  place-items: center;
+  transform: rotate(-3deg);
+}
+
+.confirm-icon.destructive {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.confirm-dialog h2 {
+  margin-bottom: 0.45rem;
+}
+
+.confirm-dialog p {
+  margin-bottom: 1.25rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+@media (max-width: 480px) {
+  .confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-actions .btn {
+    width: 100%;
+  }
+}

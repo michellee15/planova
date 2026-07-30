@@ -1,17 +1,9 @@
 import Icon from "../ui/Icon";
-
-function formatDate(value) {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+import { formatDisplayDate } from "../../utils/preferences";
 
 function TripHeader({ trip }) {
-  const start = formatDate(trip.start_date);
-  const end = formatDate(trip.end_date);
+  const start = formatDisplayDate(trip.start_date);
+  const end = formatDisplayDate(trip.end_date);
 
   return (
     <header className="trip-hero">

@@ -2,6 +2,7 @@
 @import "./styles/components/navigation.css";
 @import "./styles/components/profile.css";
 @import "./styles/components/modal.css";
+@import "./styles/components/confirm-dialog.css";
 @import "./styles/components/cards.css";
 @import "./styles/components/forms.css";
 @import "./styles/components/buttons.css";
@@ -10,6 +11,7 @@
 @import "./styles/features/trip-overview.css";
 @import "./styles/features/trip-sections.css";
 @import "./styles/pages/auth-page.css";
+@import "./styles/pages/settings-page.css";
 @import "./styles/pages/trips-page.css";
 @import "./styles/pages/trip-details-page.css";
 @import "./styles/base/responsive.css";

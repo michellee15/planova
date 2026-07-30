@@ -1,13 +1,5 @@
 import Icon from "../ui/Icon";
-
-function formatDate(dateString) {
-  if (!dateString) return "Not set";
-  return new Date(dateString).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+import { formatDisplayDate } from "../../utils/preferences";
 
 function TripOverview({ trip }) {
   const startDate = trip.start_date ? new Date(trip.start_date) : null;
@@ -25,8 +17,16 @@ function TripOverview({ trip }) {
     : "—";
 
   const stats = [
-    { icon: "calendar", label: "Starts", value: formatDate(trip.start_date) },
-    { icon: "calendar", label: "Ends", value: formatDate(trip.end_date) },
+    {
+      icon: "calendar",
+      label: "Starts",
+      value: formatDisplayDate(trip.start_date) || "Not set",
+    },
+    {
+      icon: "calendar",
+      label: "Ends",
+      value: formatDisplayDate(trip.end_date) || "Not set",
+    },
     { icon: "clock", label: "Duration", value: tripDays === "—" ? "Not set" : `${tripDays} days` },
     {
       icon: "users",
