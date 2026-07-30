@@ -14,6 +14,13 @@ export const loginUser = async (userData) => {
   return response.data;
 };
 
+export const getCurrentUser = async () => {
+  const response = await axios.get(`${USER_API_URL}/me`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
 export const updateCurrentUser = async (profileData) => {
   const response = await axios.patch(`${USER_API_URL}/me`, profileData, {
     headers: getAuthHeaders(),
