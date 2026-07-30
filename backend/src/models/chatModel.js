@@ -6,7 +6,16 @@ const createSession = async ({ userId, tripId = null, title = null }) => {
       `SELECT id
        FROM trips
        WHERE id = $1
-        AND user_id = $2`,
+        AND (
+          user_id = $2
+          OR EXISTS (
+            SELECT 1
+            FROM trip_collaborators tc
+            WHERE tc.trip_id = trips.id
+             AND tc.user_id = $2
+             AND tc.status = 'accepted'
+          )
+        )`,
       [tripId, userId]
     );
     if (tripResult.rows.length === 0) return null;

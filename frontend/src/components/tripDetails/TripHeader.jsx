@@ -1,9 +1,16 @@
 import Icon from "../ui/Icon";
 import { formatDisplayDate } from "../../utils/preferences";
 
-function TripHeader({ trip }) {
+function TripHeader({
+  trip,
+  accessRole,
+  collaboratorCount,
+  collaboratorsLoading,
+  onManageCollaborators,
+}) {
   const start = formatDisplayDate(trip.start_date);
   const end = formatDisplayDate(trip.end_date);
+  const isOwner = accessRole === "owner";
 
   return (
     <header className="trip-hero">
@@ -32,7 +39,22 @@ function TripHeader({ trip }) {
               <Icon name="wallet" size={16} />
               {trip.currency || "SGD"}
             </span>
+            <span className="trip-access-pill">
+              <Icon name={isOwner ? "sparkle" : "users"} size={16} />
+              {isOwner ? "Trip owner" : "Shared with you"}
+            </span>
           </div>
+          <button
+            className="btn btn-secondary trip-collaborators-button"
+            type="button"
+            onClick={onManageCollaborators}
+          >
+            <Icon name="users" size={17} />
+            {isOwner ? "Share trip" : "View collaborators"}
+            {isOwner && !collaboratorsLoading && collaboratorCount > 0 && (
+              <span>{collaboratorCount}</span>
+            )}
+          </button>
         </div>
       </div>
       <div className="trip-hero-decoration" aria-hidden="true">

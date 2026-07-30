@@ -20,7 +20,7 @@ const createMember = async (req, res) => {
     if (!name) return res.status(400).json({message: "Member name is required."});
     const newMember = await memberModel.createMember({user_id: req.user.id, trip_id: tripId, name,});
     if (!newMember) return res.status(404).json({message: "Trip not found"});
-    await tripModel.updateTripPeopleCount(tripId);
+    await tripModel.updateTripPeopleCount(tripId, req.user.id);
     res.status(201).json(newMember);
   } catch (error) {
     console.error("Error creating member: ", error);
@@ -34,7 +34,7 @@ const deleteMember = async (req, res) => {
     const {id} = req.params;
     const deletedMember = await memberModel.deleteMember(id, userId);
     if (!deletedMember) return res.status(400).json({message: "Member not found."});
-    await tripModel.updateTripPeopleCount(deletedMember.trip_id);
+    await tripModel.updateTripPeopleCount(deletedMember.trip_id, userId);
     res.json({message: "Member deleted successfully."});
   } catch (error) {
     console.error("Error deleting member: ", error);

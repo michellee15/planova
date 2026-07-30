@@ -18,7 +18,16 @@ const getItineraryByTripId = async (tripId, user_id) => {
      FROM itinerary_items i
      JOIN trips t ON i.trip_id = t.id
      WHERE i.trip_id = $1
-      AND t.user_id = $2
+      AND (
+        t.user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = t.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )
      ORDER BY itinerary_date ASC, start_time ASC, created_at ASC`, [tripId, user_id]
   );
   return result.rows;
@@ -30,7 +39,16 @@ const createItinerary = async (itineraryData) => {
     `SELECT id
      FROM trips
      WHERE id = $1
-      AND user_id = $2`,
+      AND (
+        user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = trips.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )`,
     [trip_id, user_id]
   );
   if (tripCheck.rows.length === 0) return null;
@@ -63,7 +81,16 @@ const updateItinerary = async (id, user_id, itineraryData) => {
      FROM trips t
      WHERE i.trip_id = t.id
       AND i.id = $11
-      AND t.user_id = $12
+      AND (
+        t.user_id = $12
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = t.id
+           AND tc.user_id = $12
+           AND tc.status = 'accepted'
+        )
+      )
      RETURNING i.*`,
      [title, location, itinerary_date, start_time, end_time, notes, latitude, longitude, formatted_address, place_id, id, user_id]
   );
@@ -76,7 +103,16 @@ const deleteItinerary = async (id, user_id) => {
      USING trips t
      WHERE i.trip_id = t.id
       AND i.id = $1
-      AND t.user_id = $2
+      AND (
+        t.user_id = $2
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators tc
+          WHERE tc.trip_id = t.id
+           AND tc.user_id = $2
+           AND tc.status = 'accepted'
+        )
+      )
      RETURNING i.*`, [id, user_id]
   );
   return result.rows[0];
@@ -90,7 +126,16 @@ const createItineraryBatch = async ({ user_id, trip_id, items }) => {
       `SELECT id
        FROM trips
        WHERE id = $1
-        AND user_id = $2
+        AND (
+          user_id = $2
+          OR EXISTS (
+            SELECT 1
+            FROM trip_collaborators tc
+            WHERE tc.trip_id = trips.id
+             AND tc.user_id = $2
+             AND tc.status = 'accepted'
+          )
+        )
        FOR UPDATE`,
       [trip_id, user_id]
     );
