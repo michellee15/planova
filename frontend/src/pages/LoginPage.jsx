@@ -15,7 +15,7 @@ function AuthVisual() {
         <h2>Little plans become lovely memories.</h2>
         <p>
           Keep your itinerary, shared expenses, and favourite trip moments
-          together—without the travel-planning clutter.
+          together without the travel-planning clutter.
         </p>
         <div className="auth-postcard">
           <span className="auth-postcard-stamp">

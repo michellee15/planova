@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createTrip,
   deleteTrip,
@@ -10,6 +10,13 @@ import Icon from "../components/ui/Icon";
 import Modal from "../components/ui/Modal";
 import { useConfirmDialog } from "../components/ui/confirmDialogContext";
 import { formatDisplayDate, getPreferences } from "../utils/preferences";
+import {
+  acceptInvitation,
+  declineInvitation,
+  getPendingInvitations,
+  leaveSharedTrip,
+} from "../api/collaborationApi";
+import PendingInvitations from "../components/collaboration/PendingInvitations";
 
 const createEmptyForm = () => ({
   title: "",
@@ -143,19 +150,59 @@ function TripsPage() {
   const [editingTrip, setEditingTrip] = useState(null);
   const [formData, setFormData] = useState(createEmptyForm);
   const [formError, setFormError] = useState("");
+  const [invitations, setInvitations] = useState([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(true);
+  const [invitationError, setInvitationError] = useState("");
+  const [busyInvitationId, setBusyInvitationId] = useState(null);
+
+  const loadTrips = useCallback(async () => {
+    try {
+      const data = await getTrips();
+      setTrips(Array.isArray(data) ? data : []);
+    } catch (loadError) {
+      console.error("Error loading trips:", loadError);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let active = true;
-    getTrips()
-      .then((data) => {
-        if (active) setTrips(data);
-      })
-      .catch((error) => console.error("Error loading trips:", error))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    let ignore = false;
+
+    const loadInitialData = async () => {
+      const [tripsResult, invitationsResult] = await Promise.allSettled([
+        getTrips(),
+        getPendingInvitations(),
+      ]);
+      if (ignore) return;
+
+      if (tripsResult.status === "fulfilled") {
+        setTrips(Array.isArray(tripsResult.value) ? tripsResult.value : []);
+      } else {
+        console.error("Error loading trips:", tripsResult.reason);
+      }
+
+      if (invitationsResult.status === "fulfilled") {
+        setInvitations(
+          Array.isArray(invitationsResult.value)
+            ? invitationsResult.value
+            : [],
+        );
+      } else {
+        console.error(
+          "Error loading trip invitations:",
+          invitationsResult.reason,
+        );
+        setInvitationError(invitationsResult.reason.message);
+      }
+
+      setLoading(false);
+      setInvitationsLoading(false);
+    };
+
+    loadInitialData();
     return () => {
-      active = false;
+      ignore = true;
     };
   }, []);
 
@@ -214,7 +261,10 @@ function TripsPage() {
     setFormError("");
     try {
       const newTrip = await createTrip(normaliseForm());
-      setTrips((current) => [newTrip, ...current]);
+      setTrips((current) => [
+        { ...newTrip, access_role: "owner" },
+        ...current,
+      ]);
       closeModal();
     } catch (error) {
       console.error("Error creating trip:", error);
@@ -229,13 +279,72 @@ function TripsPage() {
       const updatedTrip = await updateTrip(editingTrip.id, normaliseForm());
       setTrips((current) =>
         current.map((trip) =>
-          String(trip.id) === String(editingTrip.id) ? updatedTrip : trip,
+          String(trip.id) === String(editingTrip.id)
+            ? { ...updatedTrip, access_role: trip.access_role }
+            : trip,
         ),
       );
       closeModal();
     } catch (error) {
       console.error("Error updating trip:", error);
       setFormError("We couldn’t save these changes. Please try again.");
+    }
+  };
+
+  const handleAcceptInvitation = async (invitation) => {
+    try {
+      setBusyInvitationId(invitation.id);
+      setInvitationError("");
+      await acceptInvitation(invitation.id);
+      setInvitations((current) =>
+        current.filter(
+          (item) => String(item.id) !== String(invitation.id),
+        ),
+      );
+      await loadTrips();
+    } catch (acceptError) {
+      console.error("Error accepting invitation:", acceptError);
+      setInvitationError(acceptError.message);
+    } finally {
+      setBusyInvitationId(null);
+    }
+  };
+
+  const handleDeclineInvitation = async (invitation) => {
+    try {
+      setBusyInvitationId(invitation.id);
+      setInvitationError("");
+      await declineInvitation(invitation.id);
+      setInvitations((current) =>
+        current.filter(
+          (item) => String(item.id) !== String(invitation.id),
+        ),
+      );
+    } catch (declineError) {
+      console.error("Error declining invitation:", declineError);
+      setInvitationError(declineError.message);
+    } finally {
+      setBusyInvitationId(null);
+    }
+  };
+
+  const handleLeaveTrip = async (trip) => {
+    const confirmed = await confirm({
+      title: `Leave “${trip.title}”?`,
+      description:
+        "You will lose access to this shared trip. Your private AI conversations will remain in your account without this trip attached.",
+      confirmLabel: "Leave trip",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await leaveSharedTrip(trip.id);
+      setTrips((current) =>
+        current.filter((item) => String(item.id) !== String(trip.id)),
+      );
+    } catch (leaveError) {
+      console.error("Error leaving shared trip:", leaveError);
     }
   };
 
@@ -285,6 +394,15 @@ function TripsPage() {
         </button>
       </section>
 
+      <PendingInvitations
+        invitations={invitations}
+        loading={invitationsLoading}
+        busyInvitationId={busyInvitationId}
+        error={invitationError}
+        onAccept={handleAcceptInvitation}
+        onDecline={handleDeclineInvitation}
+      />
+
       <section className="trips-content" aria-labelledby="trips-heading">
         <div className="trips-section-heading">
           <div>
@@ -317,6 +435,7 @@ function TripsPage() {
               const startDate = displayDate(trip.start_date);
               const endDate = displayDate(trip.end_date);
               const palette = paletteNames[index % paletteNames.length];
+              const isOwner = trip.access_role !== "editor";
 
               return (
                 <article className={`trip-card trip-card-${palette}`} key={trip.id}>
@@ -336,19 +455,35 @@ function TripsPage() {
                           <Icon name="edit" size={16} />
                           Edit trip
                         </button>
-                        <button className="danger" type="button" onClick={() => handleDelete(trip)}>
-                          <Icon name="trash" size={16} />
-                          Delete
-                        </button>
+                        {isOwner ? (
+                          <button className="danger" type="button" onClick={() => handleDelete(trip)}>
+                            <Icon name="trash" size={16} />
+                            Delete
+                          </button>
+                        ) : (
+                          <button className="danger" type="button" onClick={() => handleLeaveTrip(trip)}>
+                            <Icon name="arrowLeft" size={16} />
+                            Leave trip
+                          </button>
+                        )}
                       </div>
                     </details>
                   </div>
 
                   <div className="trip-card-body">
-                    <span className="trip-destination">
-                      <Icon name="pin" size={14} />
-                      {trip.destination}
-                    </span>
+                    <div className="trip-card-kicker">
+                      <span className="trip-destination">
+                        <Icon name="pin" size={14} />
+                        {trip.destination}
+                      </span>
+                      <span
+                        className={`trip-access-badge ${
+                          isOwner ? "is-owner" : "is-shared"
+                        }`}
+                      >
+                        {isOwner ? "Owner" : "Shared"}
+                      </span>
+                    </div>
                     <h3>{trip.title}</h3>
 
                     <div className="trip-card-meta">

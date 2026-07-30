@@ -8,6 +8,7 @@
 @import "./styles/components/buttons.css";
 @import "./styles/features/itinerary.css";
 @import "./styles/features/chatbot.css";
+@import "./styles/features/collaboration.css";
 @import "./styles/features/trip-overview.css";
 @import "./styles/features/trip-sections.css";
 @import "./styles/pages/auth-page.css";

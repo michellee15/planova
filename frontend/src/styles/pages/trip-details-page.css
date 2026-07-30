@@ -120,6 +120,33 @@
   backdrop-filter: blur(8px);
 }
 
+.trip-hero-meta .trip-access-pill {
+  background: rgba(255, 253, 236, 0.72);
+  color: #8c7338;
+}
+
+.trip-collaborators-button {
+  position: relative;
+  z-index: 3;
+  min-height: 38px;
+  margin-top: 0.85rem;
+  border-color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(8px);
+}
+
+.trip-collaborators-button > span {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 0.66rem;
+  place-items: center;
+}
+
 .trip-hero-decoration {
   position: absolute;
   inset: 0 0 0 55%;

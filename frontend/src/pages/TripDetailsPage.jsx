@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { getTripById } from "../api/tripApi";
 
 import TripHeader from "../components/tripDetails/TripHeader";
@@ -18,6 +23,8 @@ import useItineraries from "../hooks/useItineraries";
 import ItineraryForm from "../components/itineraries/ItineraryForm";
 import ItineraryList from "../components/itineraries/ItineraryList";
 import Icon from "../components/ui/Icon";
+import CollaborationModal from "../components/collaboration/CollaborationModal";
+import useCollaborators from "../hooks/useCollaborators";
 
 import {
   calculateBalances,
@@ -48,6 +55,7 @@ function SectionIntro({ eyebrow, title, description, icon }) {
 
 function TripDetailsPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab");
   const activeTab = tabs.some((tab) => tab.id === requestedTab)
@@ -57,6 +65,21 @@ function TripDetailsPage() {
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showCollaborators, setShowCollaborators] = useState(false);
+  const {
+    accessRole,
+    collaborators,
+    acceptedCount,
+    loading: collaboratorsLoading,
+    saving: collaboratorsSaving,
+    error: collaboratorsError,
+    success: collaboratorsSuccess,
+    setError: setCollaboratorsError,
+    setSuccess: setCollaboratorsSuccess,
+    inviteCollaborator,
+    cancelInvitation,
+    removeCollaborator,
+  } = useCollaborators(id);
 
   const {
     expenses,
@@ -162,7 +185,13 @@ function TripDetailsPage() {
         All trips
       </Link>
 
-      <TripHeader trip={trip} />
+      <TripHeader
+        trip={trip}
+        accessRole={accessRole || trip.access_role}
+        collaboratorCount={acceptedCount}
+        collaboratorsLoading={collaboratorsLoading}
+        onManageCollaborators={() => setShowCollaborators(true)}
+      />
 
       <nav className="trip-tabs" aria-label="Trip details">
         {tabs.map((tab) => (
@@ -307,6 +336,27 @@ function TripDetailsPage() {
           </section>
         )}
       </div>
+
+      {showCollaborators && (
+        <CollaborationModal
+          trip={trip}
+          accessRole={accessRole || trip.access_role}
+          collaborators={collaborators}
+          loading={collaboratorsLoading}
+          saving={collaboratorsSaving}
+          error={collaboratorsError}
+          success={collaboratorsSuccess}
+          onClose={() => {
+            setShowCollaborators(false);
+            setCollaboratorsError("");
+            setCollaboratorsSuccess("");
+          }}
+          onInvite={inviteCollaborator}
+          onCancelInvitation={cancelInvitation}
+          onRemoveCollaborator={removeCollaborator}
+          onLeftTrip={() => navigate("/", { replace: true })}
+        />
+      )}
     </main>
   );
 }
