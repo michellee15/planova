@@ -72,6 +72,8 @@ function TripForm({ formData, onChange, onSubmit, onCancel, error, isEditing }) 
             name="start_date"
             value={formData.start_date}
             onChange={onChange}
+            max={formData.end_date || undefined}
+            required={Boolean(formData.end_date)}
           />
         </div>
 
@@ -84,8 +86,13 @@ function TripForm({ formData, onChange, onSubmit, onCancel, error, isEditing }) 
             value={formData.end_date}
             onChange={onChange}
             min={formData.start_date || undefined}
+            required={Boolean(formData.start_date)}
           />
         </div>
+        <p className="form-help full-width">
+          Add both dates or leave both blank. The start date may be the same as
+          the end date.
+        </p>
 
         <div className="form-field">
           <label htmlFor="trip-budget">Budget</label>
@@ -127,7 +134,11 @@ function TripForm({ formData, onChange, onSubmit, onCancel, error, isEditing }) 
         </div>
       </div>
 
-      {error && <p className="form-error">{error}</p>}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
 
       <div className="trip-modal-actions">
         <button className="btn btn-secondary" type="button" onClick={onCancel}>
@@ -243,6 +254,7 @@ function TripsPage() {
 
   const handleFormChange = (event) => {
     const { name, value } = event.target;
+    setFormError("");
     setFormData((current) => ({ ...current, [name]: value }));
   };
 
@@ -268,7 +280,10 @@ function TripsPage() {
       closeModal();
     } catch (error) {
       console.error("Error creating trip:", error);
-      setFormError("We couldn’t create this trip. Please try again.");
+      setFormError(
+        error.response?.data?.message ||
+          "We couldn’t create this trip. Please try again.",
+      );
     }
   };
 
@@ -287,7 +302,10 @@ function TripsPage() {
       closeModal();
     } catch (error) {
       console.error("Error updating trip:", error);
-      setFormError("We couldn’t save these changes. Please try again.");
+      setFormError(
+        error.response?.data?.message ||
+          "We couldn’t save these changes. Please try again.",
+      );
     }
   };
 

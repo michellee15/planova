@@ -6,10 +6,13 @@ import {
   deleteExpense,
 } from "../api/expenseApi";
 import { useConfirmDialog } from "../components/ui/confirmDialogContext";
+import { getDateRangeMessage } from "../utils/dateRange";
 
-function useExpenses(tripId) {
+function useExpenses(tripId, dateRange) {
   const confirm = useConfirmDialog();
   const [expenses, setExpenses] = useState([]);
+  const [expenseFormError, setExpenseFormError] = useState("");
+  const [editExpenseError, setEditExpenseError] = useState("");
   const [expenseFormData, setExpenseFormData] = useState({
     title: "", amount: "", category: "", paid_by_member_id: "", split_member_ids: [], expense_date:"",
   });
@@ -53,6 +56,7 @@ function useExpenses(tripId) {
 
   const handleExpenseChange = (event) => {
     const {name, value} = event.target;
+    setExpenseFormError("");
     setExpenseFormData((prevData) => ({
       ...prevData, [name]: value,
     }));
@@ -60,7 +64,17 @@ function useExpenses(tripId) {
 
   const handleCreateExpense = async (event) => {
     event.preventDefault();
+    setExpenseFormError("");
     if (!expenseFormData.title || !expenseFormData.amount || expenseFormData.split_member_ids.length === 0) return;
+    const dateError = getDateRangeMessage(
+      expenseFormData.expense_date,
+      dateRange,
+      "Expense date",
+    );
+    if (dateError) {
+      setExpenseFormError(dateError);
+      return;
+    }
     const finalisedCategory = expenseFormData.category === "Others" ? expenseFormData.custom_category : expenseFormData.category;
     try {
       await createExpense(tripId, {
@@ -77,6 +91,7 @@ function useExpenses(tripId) {
       });
     } catch (error) {
       console.error("Error creating expense: ", error);
+      setExpenseFormError(error.message);
     }
   };
 
@@ -104,13 +119,24 @@ function useExpenses(tripId) {
   //function that saves edited data to backend 
   const handleEditExpenseChange = (event) => {
     const {name, value} = event.target;
+    setEditExpenseError("");
     setEditExpenseFormData((prevData) => ({
       ...prevData, [name]: value,
     }));
   }
 
   const handleEditExpense = async (expenseId) => {
+    setEditExpenseError("");
     if (!editExpenseFormData.title || !editExpenseFormData.amount) return;
+    const dateError = getDateRangeMessage(
+      editExpenseFormData.expense_date,
+      dateRange,
+      "Expense date",
+    );
+    if (dateError) {
+      setEditExpenseError(dateError);
+      return;
+    }
     const finalisedCategory = editExpenseFormData.category === "Others" ? editExpenseFormData.custom_category : editExpenseFormData.category;
     try {
       await updateExpense(expenseId, {
@@ -128,12 +154,14 @@ function useExpenses(tripId) {
       });
     } catch (error) {
       console.error("Error updating expense: ", error)
+      setEditExpenseError(error.message);
     }
   }
 
   // when user press edit button
   const handleStartEditExpense = async (expense) => {
     try {
+      setEditExpenseError("");
       setEditingExpenseId(expense.id);
       setEditExpenseFormData({
         title: expense.title || "", 
@@ -151,6 +179,7 @@ function useExpenses(tripId) {
 
   // when user press cancel button
   const handleCancelEditExpense = () => {
+    setEditExpenseError("");
     setEditingExpenseId(null);
     setEditExpenseFormData({
       title: "", amount: "", category: "", custom_category: "", paid_by_member_id: "", split_member_ids: [], expense_date: "",
@@ -191,7 +220,7 @@ function useExpenses(tripId) {
   };
 
   return {
-    expenses, expenseFormData, editingExpenseId, editExpenseFormData, loadExpenses, handleExpenseChange, 
+    expenses, expenseFormData, expenseFormError, editingExpenseId, editExpenseFormData, editExpenseError, loadExpenses, handleExpenseChange,
     handleCreateExpense, handleEditExpense, handleEditExpenseChange, handleDeleteExpense, handleStartEditExpense, 
     handleCancelEditExpense, handleSplitMemberChange, handleEditSplitMemberChange,
   };

@@ -25,6 +25,7 @@ import ItineraryList from "../components/itineraries/ItineraryList";
 import Icon from "../components/ui/Icon";
 import CollaborationModal from "../components/collaboration/CollaborationModal";
 import useCollaborators from "../hooks/useCollaborators";
+import { getTripDateRange } from "../utils/dateRange";
 
 import {
   calculateBalances,
@@ -66,6 +67,7 @@ function TripDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCollaborators, setShowCollaborators] = useState(false);
+  const tripDateRange = getTripDateRange(trip);
   const {
     accessRole,
     collaborators,
@@ -84,8 +86,10 @@ function TripDetailsPage() {
   const {
     expenses,
     expenseFormData,
+    expenseFormError,
     editingExpenseId,
     editExpenseFormData,
+    editExpenseError,
     handleExpenseChange,
     handleCreateExpense,
     handleDeleteExpense,
@@ -95,7 +99,7 @@ function TripDetailsPage() {
     handleEditExpense,
     handleSplitMemberChange,
     handleEditSplitMemberChange,
-  } = useExpenses(id);
+  } = useExpenses(id, tripDateRange);
 
   const {
     members,
@@ -115,8 +119,10 @@ function TripDetailsPage() {
   const {
     itineraries,
     itineraryFormData,
+    itineraryFormError,
     editingItineraryId,
     editItineraryFormData,
+    editItineraryError,
     handleItineraryChange,
     handleCreateItinerary,
     handleDeleteItinerary,
@@ -131,7 +137,7 @@ function TripDetailsPage() {
     nearestTravelTimes,
     travelTimesLoading,
     travelTimesError,
-  } = useItineraries(id);
+  } = useItineraries(id, tripDateRange);
 
   useEffect(() => {
     let active = true;
@@ -248,6 +254,8 @@ function TripDetailsPage() {
               itineraryFormData={itineraryFormData}
               handleItineraryChange={handleItineraryChange}
               handleCreateItinerary={handleCreateItinerary}
+              dateRange={tripDateRange}
+              error={itineraryFormError}
             />
             <ItineraryList
               itineraries={itineraries}
@@ -265,6 +273,8 @@ function TripDetailsPage() {
               nearestTravelTimes={nearestTravelTimes}
               travelTimesLoading={travelTimesLoading}
               travelTimesError={travelTimesError}
+              dateRange={tripDateRange}
+              editError={editItineraryError}
             />
           </section>
         )}
@@ -284,6 +294,8 @@ function TripDetailsPage() {
                 onSubmit={handleCreateExpense}
                 members={members}
                 onSplitMemberChange={handleSplitMemberChange}
+                dateRange={tripDateRange}
+                error={expenseFormError}
               />
               <ExpenseList
                 expenses={expenses}
@@ -297,6 +309,8 @@ function TripDetailsPage() {
                 onCancelEditExpense={handleCancelEditExpense}
                 onDeleteExpense={handleDeleteExpense}
                 onEditSplitMemberChange={handleEditSplitMemberChange}
+                dateRange={tripDateRange}
+                editError={editExpenseError}
               />
             </section>
             <div className="settlement-grid">

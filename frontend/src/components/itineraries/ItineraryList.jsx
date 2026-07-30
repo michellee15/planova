@@ -2,7 +2,8 @@ import ItineraryItem from "./ItineraryItem";
 import { formatDistance } from "../../utils/preferences";
 
 function ItineraryList({itineraries, editingItineraryId, editFormData, onEditChange, onStartEditItinerary, onEditItinerary, onCancelEditItinerary,
-  onDeleteItinerary, nearestItinerary, locationLoading, locationError, onFindNearestItinerary, nearestTravelTimes, travelTimesLoading, travelTimesError}) {
+  onDeleteItinerary, nearestItinerary, locationLoading, locationError, onFindNearestItinerary, nearestTravelTimes, travelTimesLoading, travelTimesError,
+  dateRange, editError}) {
   return (
     <>
       <div className="itinerary-location-tools">
@@ -72,6 +73,8 @@ function ItineraryList({itineraries, editingItineraryId, editFormData, onEditCha
               onEditItinerary={onEditItinerary}
               onCancelEditItinerary={onCancelEditItinerary}
               onDeleteItinerary={onDeleteItinerary}
+              dateRange={dateRange}
+              editError={editError}
             />
           ))}
         </div>

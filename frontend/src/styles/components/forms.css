@@ -26,6 +26,12 @@
   font-size: 0.76rem;
 }
 
+input:disabled {
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 .full-width {
   grid-column: 1 / -1;
 }
@@ -37,6 +43,11 @@
   background: var(--danger-soft);
   color: var(--danger);
   font-size: 0.84rem;
+}
+
+.expense-form > .form-error,
+.expense-item-editing > .form-error {
+  margin-top: 1rem;
 }
 
 @media (max-width: 560px) {

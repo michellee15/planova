@@ -12,6 +12,8 @@ function ExpenseList({
   onCancelEditExpense,
   onDeleteExpense,
   onEditSplitMemberChange,
+  dateRange,
+  editError,
 }) {
   if (expenses.length === 0) {
     return <p className="empty-state">No expenses yet—your first one will appear here.</p>;
@@ -33,6 +35,8 @@ function ExpenseList({
           onCancelEditExpense={onCancelEditExpense}
           onDeleteExpense={onDeleteExpense}
           onEditSplitMemberChange={onEditSplitMemberChange}
+          dateRange={dateRange}
+          editError={editError}
         />
       ))}
     </div>

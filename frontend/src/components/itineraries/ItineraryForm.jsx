@@ -1,4 +1,17 @@
-function ItineraryForm({itineraryFormData, handleCreateItinerary, handleItineraryChange}) {
+import {
+  getDateRangeHelp,
+  hasCompleteDateRange,
+} from "../../utils/dateRange";
+
+function ItineraryForm({
+  itineraryFormData,
+  handleCreateItinerary,
+  handleItineraryChange,
+  dateRange,
+  error,
+}) {
+  const hasTripDates = hasCompleteDateRange(dateRange);
+
   return (
     <form className="form" onSubmit={handleCreateItinerary}>
       <div className="form-grid">
@@ -10,10 +23,16 @@ function ItineraryForm({itineraryFormData, handleCreateItinerary, handleItinerar
           placeholder="Itinerary name"
         />
         <input
+          id="itinerary-date"
           type="date"
           name="itinerary_date"
           value={itineraryFormData.itinerary_date}
           onChange={handleItineraryChange}
+          min={dateRange.startDate || undefined}
+          max={dateRange.endDate || undefined}
+          aria-describedby="itinerary-date-help"
+          disabled={!hasTripDates}
+          required
         />
         <input
           type="time"
@@ -40,9 +59,23 @@ function ItineraryForm({itineraryFormData, handleCreateItinerary, handleItinerar
           onChange={handleItineraryChange}
           placeholder="Notes"
         />
+        <p className="form-help full-width" id="itinerary-date-help">
+          {getDateRangeHelp(dateRange)}
+        </p>
       </div>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
       <div className="form-actions">
-        <button className="btn btn-primary" type="submit">Add Itinerary</button>
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={!hasTripDates}
+        >
+          Add Itinerary
+        </button>
       </div>
     </form>
   );
