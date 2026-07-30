@@ -5,8 +5,10 @@ import {
   updateExpense,
   deleteExpense,
 } from "../api/expenseApi";
+import { useConfirmDialog } from "../components/ui/confirmDialogContext";
 
 function useExpenses(tripId) {
+  const confirm = useConfirmDialog();
   const [expenses, setExpenses] = useState([]);
   const [expenseFormData, setExpenseFormData] = useState({
     title: "", amount: "", category: "", paid_by_member_id: "", split_member_ids: [], expense_date:"",
@@ -33,9 +35,20 @@ function useExpenses(tripId) {
   };
 
   useEffect(() => {
-    if (tripId) {
-      loadExpenses();
-    }
+    if (!tripId) return undefined;
+    let active = true;
+    getExpensesByTripId(tripId)
+      .then((expenseData) => {
+        if (!active) return;
+        setExpenses(Array.isArray(expenseData) ? expenseData : []);
+      })
+      .catch((error) => {
+        console.error("Error loading expenses:", error);
+        if (active) setExpenses([]);
+      });
+    return () => {
+      active = false;
+    };
   }, [tripId]);
 
   const handleExpenseChange = (event) => {
@@ -68,6 +81,18 @@ function useExpenses(tripId) {
   };
 
   const handleDeleteExpense = async (expenseId) => {
+    const expense = expenses.find(
+      (item) => String(item.id) === String(expenseId),
+    );
+    const shouldDelete = await confirm({
+      title: `Delete “${expense?.title || "this expense"}”?`,
+      description:
+        "The expense will be removed from balances and settlement calculations.",
+      confirmLabel: "Delete expense",
+      destructive: true,
+    });
+    if (!shouldDelete) return;
+
     try {
       await deleteExpense(expenseId);
       await loadExpenses();

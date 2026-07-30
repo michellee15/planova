@@ -4,8 +4,10 @@ import {
   deleteMember,
   getMembersByTripId,
 } from "../api/memberApi";
+import { useConfirmDialog } from "../components/ui/confirmDialogContext";
 
 function useMembers(tripId) {
+  const confirm = useConfirmDialog();
   const [members, setMembers] = useState([]);
   const [memberFormData, setMemberFormData] = useState({name: ""});
 
@@ -26,9 +28,20 @@ function useMembers(tripId) {
   }
 
   useEffect(() => {
-    if (tripId) {
-      loadMembers();
-    }
+    if (!tripId) return undefined;
+    let active = true;
+    getMembersByTripId(tripId)
+      .then((memberData) => {
+        if (!active) return;
+        setMembers(Array.isArray(memberData) ? memberData : []);
+      })
+      .catch((error) => {
+        console.error("Error loading members: ", error);
+        if (active) setMembers([]);
+      });
+    return () => {
+      active = false;
+    };
   }, [tripId]);
 
   const handleMemberChange = (event) => {
@@ -53,6 +66,18 @@ function useMembers(tripId) {
 
   const handleDeleteMember = async (memberId) => {
     if (!tripId) return;
+    const member = members.find(
+      (item) => String(item.id) === String(memberId),
+    );
+    const shouldDelete = await confirm({
+      title: `Remove ${member?.name || "this member"}?`,
+      description:
+        "This may affect expenses and balances linked to this travel companion.",
+      confirmLabel: "Remove member",
+      destructive: true,
+    });
+    if (!shouldDelete) return;
+
     try {
       await deleteMember(memberId);
       await loadMembers();

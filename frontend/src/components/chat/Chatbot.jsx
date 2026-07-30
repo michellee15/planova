@@ -6,6 +6,8 @@ import {
 } from "../../api/itineraryApi";
 import { getTripById, getTrips } from "../../api/tripApi";
 import useChatbot from "../../hooks/useChatbot";
+import { useConfirmDialog } from "../ui/confirmDialogContext";
+import { formatDistance, getPreferences } from "../../utils/preferences";
 
 const promptSuggestions = [
   "Find a good place to eat nearby",
@@ -335,7 +337,8 @@ function RecommendationGroup({
             {data.mode === "plan" ? "Your suggested plan" : "Nearby recommendations"}
           </strong>
           <span>
-            Within {data.radiusKm || 5} km · {data.items?.length || 0} results
+            Within {formatDistance(data.radiusKm || 5)} ·{" "}
+            {data.items?.length || 0} results
           </span>
         </div>
         <div className="chat-save-fields">
@@ -422,6 +425,7 @@ const formatSessionDate = (dateString) => {
 };
 
 function Chatbot() {
+  const confirm = useConfirmDialog();
   const routeLocation = useLocation();
   const tripRoute = matchPath("/trips/:id", routeLocation.pathname);
   const pageTripId = tripRoute?.params.id || null;
@@ -448,7 +452,9 @@ function Chatbot() {
   const [trips, setTrips] = useState([]);
   const [message, setMessage] = useState("");
   const [mode, setMode] = useState("auto");
-  const [radiusKm, setRadiusKm] = useState(5);
+  const [radiusKm, setRadiusKm] = useState(
+    () => getPreferences().defaultRadiusKm,
+  );
   const [manualLocation, setManualLocation] = useState("");
   const [deviceLocation, setDeviceLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("");
@@ -632,9 +638,13 @@ function Chatbot() {
   };
 
   const handleDeleteConversation = async (sessionId) => {
-    const shouldDelete = window.confirm(
-      "Delete this conversation and its messages?",
-    );
+    const shouldDelete = await confirm({
+      title: "Delete this conversation?",
+      description:
+        "This conversation and all of its messages will be permanently removed.",
+      confirmLabel: "Delete conversation",
+      destructive: true,
+    });
     if (!shouldDelete) return;
 
     try {
@@ -909,7 +919,7 @@ function Chatbot() {
                     >
                       {[2, 5, 10, 15, 25].map((radius) => (
                         <option key={radius} value={radius}>
-                          {radius} km
+                          {formatDistance(radius)}
                         </option>
                       ))}
                     </select>

@@ -1,4 +1,5 @@
 import ItineraryItem from "./ItineraryItem";
+import { formatDistance } from "../../utils/preferences";
 
 function ItineraryList({itineraries, editingItineraryId, editFormData, onEditChange, onStartEditItinerary, onEditItinerary, onCancelEditItinerary,
   onDeleteItinerary, nearestItinerary, locationLoading, locationError, onFindNearestItinerary, nearestTravelTimes, travelTimesLoading, travelTimesError}) {
@@ -33,7 +34,7 @@ function ItineraryList({itineraries, editingItineraryId, editFormData, onEditCha
             {nearestTravelTimes && (
               <>
                 {nearestTravelTimes.distanceKm != null && (
-                  <p>Distance: {nearestTravelTimes.distanceKm} km</p>
+                  <p>Distance: {formatDistance(nearestTravelTimes.distanceKm)}</p>
                 )}
 
                 {nearestTravelTimes.grabMinutes != null && (

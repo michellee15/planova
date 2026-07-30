@@ -1,8 +1,10 @@
 import {useState} from "react";
 import { useNavigate,useLocation } from "react-router-dom";
 import {registerUser, loginUser} from "../api/authenticationApi";
+import { useConfirmDialog } from "../components/ui/confirmDialogContext";
 
 function useAuthentication() {
+  const confirm = useConfirmDialog();
   const [loginFormData, setLoginFormData] = useState({email: "", password: ""});
   const [registerFormData, setRegisterFormData] = useState({name: "", email: "", password: ""});
   const [error, setError] = useState("");
@@ -78,8 +80,13 @@ function useAuthentication() {
     }));
   };
 
-  const handleLogOut = () => {
-    const confirmation = window.confirm("Are you sure you want to log out?");
+  const handleLogOut = async () => {
+    const confirmation = await confirm({
+      title: "Log out of Planova?",
+      description:
+        "Your saved trips will stay safe and you can sign back in at any time.",
+      confirmLabel: "Log out",
+    });
     if (!confirmation) return;
     localStorage.removeItem("token");
     localStorage.removeItem("user");

@@ -8,26 +8,23 @@ import {
 } from "../api/tripApi";
 import Icon from "../components/ui/Icon";
 import Modal from "../components/ui/Modal";
+import { useConfirmDialog } from "../components/ui/confirmDialogContext";
+import { formatDisplayDate, getPreferences } from "../utils/preferences";
 
-const emptyForm = {
+const createEmptyForm = () => ({
   title: "",
   destination: "",
   start_date: "",
   end_date: "",
   total_budget: "",
-  currency: "SGD",
+  currency: getPreferences().defaultCurrency,
   num_of_people: 1,
-};
+});
 
 const paletteNames = ["lavender", "peach", "mint", "sky"];
 
 function displayDate(date) {
-  if (!date) return null;
-  return new Date(date).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return formatDisplayDate(date);
 }
 
 function TripForm({ formData, onChange, onSubmit, onCancel, error, isEditing }) {
@@ -139,11 +136,12 @@ function TripForm({ formData, onChange, onSubmit, onCancel, error, isEditing }) 
 }
 
 function TripsPage() {
+  const confirm = useConfirmDialog();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTrip, setEditingTrip] = useState(null);
-  const [formData, setFormData] = useState(emptyForm);
+  const [formData, setFormData] = useState(createEmptyForm);
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
@@ -172,12 +170,12 @@ function TripsPage() {
   const closeModal = () => {
     setShowCreateModal(false);
     setEditingTrip(null);
-    setFormData(emptyForm);
+    setFormData(createEmptyForm());
     setFormError("");
   };
 
   const openCreateModal = () => {
-    setFormData(emptyForm);
+    setFormData(createEmptyForm());
     setFormError("");
     setShowCreateModal(true);
   };
@@ -242,9 +240,13 @@ function TripsPage() {
   };
 
   const handleDelete = async (trip) => {
-    const confirmed = window.confirm(
-      `Delete “${trip.title}”? This can’t be undone.`,
-    );
+    const confirmed = await confirm({
+      title: `Delete “${trip.title}”?`,
+      description:
+        "The trip, its itinerary, expenses, and member information will be permanently removed.",
+      confirmLabel: "Delete trip",
+      destructive: true,
+    });
     if (!confirmed) return;
     try {
       await deleteTrip(trip.id);

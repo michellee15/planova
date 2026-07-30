@@ -97,6 +97,20 @@ function useChatbot() {
     };
   }, [activeSessionId]);
 
+  useEffect(() => {
+    const handleHistoryCleared = () => {
+      setSessions([]);
+      setActiveSessionId(null);
+      setMessages([]);
+    };
+    window.addEventListener("planova:chat-history-cleared", handleHistoryCleared);
+    return () =>
+      window.removeEventListener(
+        "planova:chat-history-cleared",
+        handleHistoryCleared,
+      );
+  }, []);
+
   const startNewConversation = async (tripId = null) => {
     try {
       setError("");
