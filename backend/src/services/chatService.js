@@ -7,6 +7,7 @@ const DEFAULT_RADIUS_KM = 5;
 const DEFAULT_PLANNING_WINDOW_HOURS = 4;
 const MAX_CANDIDATES = 20;
 const MAX_RESULTS = 8;
+const GOOGLE_MAPS_SEARCH_URL = "https://www.google.com/maps/search/";
 
 const inferMode = (message, requestedMode) => {
   if (["discover", "plan"].includes(requestedMode)) return requestedMode;
@@ -204,6 +205,7 @@ const hydrateRecommendation = async ({
         longitude: candidate.longitude,
         openingHours: candidate.openingHours,
         website: candidate.website,
+        googleMapsUrl: buildGoogleMapsUrl(candidate),
         phone: candidate.phone,
         wheelchair: candidate.wheelchair,
         source: candidate.source,
@@ -263,6 +265,7 @@ const buildDiscoveryFallback = ({ candidates, trip }) => ({
     longitude: candidate.longitude,
     openingHours: candidate.openingHours,
     website: candidate.website,
+    googleMapsUrl: buildGoogleMapsUrl(candidate),
     phone: candidate.phone,
     wheelchair: candidate.wheelchair,
     source: candidate.source,
@@ -353,10 +356,73 @@ const generateChatResponse = async ({
   return response;
 };
 
+const buildGoogleMapsUrl = ({ name, address, latitude, longitude }) => {
+  const cleanName = typeof name === "string" ? name.trim() : "";
+  const cleanAddress = typeof address === "string" ? address.trim() : "";
+  const numericLatitude = Number(latitude);
+  const numericLongitude = Number(longitude);
+  const hasLatitude =
+    typeof latitude === "number" ||
+    (typeof latitude === "string" && latitude.trim().length > 0);
+  const hasLongitude =
+    typeof longitude === "number" ||
+    (typeof longitude === "string" && longitude.trim().length > 0);
+  const hasValidCoordinates =
+    hasLatitude &&
+    hasLongitude &&
+    Number.isFinite(numericLatitude) &&
+    Number.isFinite(numericLongitude) &&
+    numericLatitude >= -90 &&
+    numericLatitude <= 90 &&
+    numericLongitude >= -180 &&
+    numericLongitude <= 180;
+
+  let query = null;
+  if (cleanName && cleanAddress) {
+    query = `${cleanName}, ${cleanAddress}`;
+  } else if (cleanName) {
+    query = cleanName;
+  } else if (hasValidCoordinates) {
+    query = `${numericLatitude},${numericLongitude}`;
+  }
+  if (!query) return null;
+
+  const searchParams = new URLSearchParams({ api: "1", query });
+  return `${GOOGLE_MAPS_SEARCH_URL}?${searchParams.toString()}`;
+};
+
+const enrichResponseDataWithGoogleMapsUrls = (responseData) => {
+  if (
+    !responseData ||
+    typeof responseData !== "object" ||
+    !Array.isArray(responseData.items)
+  ) {
+    return responseData;
+  }
+
+  return {
+    ...responseData,
+    items: responseData.items.map((item) => {
+      if (!item || typeof item !== "object" || item.googleMapsUrl) return item;
+
+      const googleMapsUrl = buildGoogleMapsUrl({
+        name: item.name,
+        address: item.location,
+        latitude: item.latitude,
+        longitude: item.longitude,
+      });
+
+      return googleMapsUrl ? { ...item, googleMapsUrl } : item;
+    }),
+  };
+};
+
 module.exports = {
   generateChatResponse,
   inferMode,
   validateCoordinates,
   getLocalClock,
   normalizePrice,
+  buildGoogleMapsUrl,
+  enrichResponseDataWithGoogleMapsUrls,
 };
