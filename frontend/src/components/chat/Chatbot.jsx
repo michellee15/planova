@@ -185,6 +185,16 @@ const RecommendationCard = ({
     </div>
 
     <div className="chat-recommendation-actions">
+      {item.googleMapsUrl && (
+        <a
+          href={item.googleMapsUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          View reviews on Google Maps
+        </a>
+      )}
+
       {item.website && (
         <a
           href={
@@ -198,6 +208,7 @@ const RecommendationCard = ({
           Website
         </a>
       )}
+
       {!saved && (
         <button
           className="chat-text-button"

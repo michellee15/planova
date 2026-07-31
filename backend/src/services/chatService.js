@@ -356,12 +356,20 @@ const generateChatResponse = async ({
   return response;
 };
 
-const buildGoogleMapsUrl = ({name, address, latitude, longitude}) => {
+const buildGoogleMapsUrl = ({ name, address, latitude, longitude }) => {
   const cleanName = typeof name === "string" ? name.trim() : "";
   const cleanAddress = typeof address === "string" ? address.trim() : "";
   const numericLatitude = Number(latitude);
   const numericLongitude = Number(longitude);
-  const hasValidCoordinate = 
+  const hasLatitude =
+    typeof latitude === "number" ||
+    (typeof latitude === "string" && latitude.trim().length > 0);
+  const hasLongitude =
+    typeof longitude === "number" ||
+    (typeof longitude === "string" && longitude.trim().length > 0);
+  const hasValidCoordinates =
+    hasLatitude &&
+    hasLongitude &&
     Number.isFinite(numericLatitude) &&
     Number.isFinite(numericLongitude) &&
     numericLatitude >= -90 &&
@@ -374,14 +382,40 @@ const buildGoogleMapsUrl = ({name, address, latitude, longitude}) => {
     query = `${cleanName}, ${cleanAddress}`;
   } else if (cleanName) {
     query = cleanName;
-  } else if (hasValidCoordinate) {
-    query = `${numericLatitude}, ${numericLongitude}`;
+  } else if (hasValidCoordinates) {
+    query = `${numericLatitude},${numericLongitude}`;
   }
   if (!query) return null;
 
-  const searchParams = new URLSearchParams({api: "1", query,});
+  const searchParams = new URLSearchParams({ api: "1", query });
   return `${GOOGLE_MAPS_SEARCH_URL}?${searchParams.toString()}`;
-}
+};
+
+const enrichResponseDataWithGoogleMapsUrls = (responseData) => {
+  if (
+    !responseData ||
+    typeof responseData !== "object" ||
+    !Array.isArray(responseData.items)
+  ) {
+    return responseData;
+  }
+
+  return {
+    ...responseData,
+    items: responseData.items.map((item) => {
+      if (!item || typeof item !== "object" || item.googleMapsUrl) return item;
+
+      const googleMapsUrl = buildGoogleMapsUrl({
+        name: item.name,
+        address: item.location,
+        latitude: item.latitude,
+        longitude: item.longitude,
+      });
+
+      return googleMapsUrl ? { ...item, googleMapsUrl } : item;
+    }),
+  };
+};
 
 module.exports = {
   generateChatResponse,
@@ -390,4 +424,5 @@ module.exports = {
   getLocalClock,
   normalizePrice,
   buildGoogleMapsUrl,
+  enrichResponseDataWithGoogleMapsUrls,
 };

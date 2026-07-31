@@ -47,7 +47,13 @@ const getMessages = async (req, res) => {
       sessionId,
       req.user.id
     );
-    res.json({ session, messages });
+    const enrichedMessages = messages.map((message) => ({
+      ...message,
+      response_data: chatService.enrichResponseDataWithGoogleMapsUrls(
+        message.response_data
+      ),
+    }));
+    res.json({ session, messages: enrichedMessages });
   } catch (error) {
     console.error("Error getting chat messages:", error);
     sendError(res, error, "Failed to get chat messages");

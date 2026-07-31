@@ -6,6 +6,7 @@ const {
   getLocalClock,
   normalizePrice,
   buildGoogleMapsUrl,
+  enrichResponseDataWithGoogleMapsUrls,
 } = require("../src/services/chatService");
 
 test("infers plan intent while allowing an explicit mode", () => {
@@ -104,4 +105,53 @@ test("returns null when no usable place information exists", () => {
     }),
     null
   );
+});
+
+test("adds Google Maps URLs to historical recommendation data", () => {
+  const historicalResponseData = {
+    mode: "discover",
+    items: [
+      {
+        name: "Asian Civilisations Museum",
+        location: "1 Empress Place, Singapore",
+        latitude: 1.2875,
+        longitude: 103.8514,
+      },
+    ],
+  };
+
+  const enriched = enrichResponseDataWithGoogleMapsUrls(
+    historicalResponseData
+  );
+
+  assert.equal(historicalResponseData.items[0].googleMapsUrl, undefined);
+  assert.equal(
+    new URL(enriched.items[0].googleMapsUrl).searchParams.get("query"),
+    "Asian Civilisations Museum, 1 Empress Place, Singapore"
+  );
+});
+
+test("preserves existing Google Maps URLs in recommendation data", () => {
+  const existingGoogleMapsUrl =
+    "https://www.google.com/maps/search/?api=1&query=Existing+Place";
+  const responseData = {
+    items: [
+      {
+        name: "Existing Place",
+        location: "Existing Address",
+        googleMapsUrl: existingGoogleMapsUrl,
+      },
+    ],
+  };
+
+  const enriched = enrichResponseDataWithGoogleMapsUrls(responseData);
+
+  assert.equal(enriched.items[0].googleMapsUrl, existingGoogleMapsUrl);
+});
+
+test("leaves response data without recommendation items unchanged", () => {
+  assert.equal(enrichResponseDataWithGoogleMapsUrls(null), null);
+
+  const responseData = { mode: "discover" };
+  assert.equal(enrichResponseDataWithGoogleMapsUrls(responseData), responseData);
 });
