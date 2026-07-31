@@ -5,6 +5,7 @@ const {
   validateCoordinates,
   getLocalClock,
   normalizePrice,
+  buildGoogleMapsUrl,
 } = require("../src/services/chatService");
 
 test("infers plan intent while allowing an explicit mode", () => {
@@ -48,4 +49,59 @@ test("calculates group totals for estimated prices", () => {
     max: 45,
     currency: "SGD",
   });
+});
+
+test("builds a Google Maps search URL from a place name and address", () => {
+  const googleMapsUrl = buildGoogleMapsUrl({
+    name: "Asian Civilisations Museum",
+    address: "1 Empress Place, Singapore",
+    latitude: 1.2875,
+    longitude: 103.8514,
+  });
+  const parsedUrl = new URL(googleMapsUrl);
+
+  assert.equal(parsedUrl.protocol, "https:");
+  assert.equal(parsedUrl.hostname, "www.google.com");
+  assert.equal(parsedUrl.pathname, "/maps/search/");
+  assert.equal(parsedUrl.searchParams.get("api"), "1");
+  assert.equal(
+    parsedUrl.searchParams.get("query"),
+    "Asian Civilisations Museum, 1 Empress Place, Singapore"
+  );
+});
+
+test("falls back to the place name when an address is unavailable", () => {
+  const googleMapsUrl = buildGoogleMapsUrl({
+    name: "Example Museum",
+    address: null,
+    latitude: 1.3,
+    longitude: 103.8,
+  });
+  const parsedUrl = new URL(googleMapsUrl);
+
+  assert.equal(parsedUrl.searchParams.get("query"), "Example Museum");
+});
+
+test("falls back to coordinates when name and address are unavailable", () => {
+  const googleMapsUrl = buildGoogleMapsUrl({
+    name: null,
+    address: null,
+    latitude: 1.3,
+    longitude: 103.8,
+  });
+  const parsedUrl = new URL(googleMapsUrl);
+
+  assert.equal(parsedUrl.searchParams.get("query"), "1.3,103.8");
+});
+
+test("returns null when no usable place information exists", () => {
+  assert.equal(
+    buildGoogleMapsUrl({
+      name: null,
+      address: null,
+      latitude: null,
+      longitude: null,
+    }),
+    null
+  );
 });
