@@ -15,6 +15,24 @@
   width: min(430px, 100%);
 }
 
+.auth-page-single {
+  grid-template-columns: 1fr;
+}
+
+.auth-verification-card {
+  text-align: center;
+}
+
+.auth-verification-card .auth-brand {
+  justify-content: center;
+}
+
+.auth-verification-actions {
+  display: flex;
+  margin-top: 0.75rem;
+  justify-content: center;
+}
+
 .auth-brand {
   display: inline-flex;
   margin-bottom: 2.75rem;

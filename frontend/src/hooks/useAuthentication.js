@@ -1,6 +1,10 @@
 import {useState} from "react";
 import { useNavigate,useLocation } from "react-router-dom";
-import {registerUser, loginUser} from "../api/authenticationApi";
+import {
+  registerUser,
+  loginUser,
+  resendVerificationEmail,
+} from "../api/authenticationApi";
 import { useConfirmDialog } from "../components/ui/confirmDialogContext";
 
 function useAuthentication() {
@@ -9,9 +13,21 @@ function useAuthentication() {
   const [registerFormData, setRegisterFormData] = useState({name: "", email: "", password: ""});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const verificationStatus = new URLSearchParams(location.search).get(
+    "verified"
+  );
+  const verificationError = new URLSearchParams(location.search).get(
+    "verification"
+  );
+  const [success, setSuccess] = useState(
+    verificationStatus === "true"
+      ? "Email verified. You can now sign in."
+      : ""
+  );
   const from = location.state?.from?.pathname || "/";
 
   const handleLogin = async(event) => {
@@ -33,7 +49,16 @@ function useAuthentication() {
       }, 1000);
     } catch (error) {
       console.error("Error logging in: ", error);
-      setError("Login failed. Please check your details and try again.")
+      const responseData = error.response?.data;
+      if (responseData?.code === "EMAIL_NOT_VERIFIED") {
+        setVerificationEmail(responseData.email || loginFormData.email);
+        setError(responseData.message);
+      } else {
+        setError(
+          responseData?.message ||
+            "Login failed. Please check your details and try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -58,17 +83,37 @@ function useAuthentication() {
       setError("");
       setSuccess("");
       const data = await registerUser(registerFormData);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setSuccess("Account successfully registered!");
-      setTimeout(() => {
-        navigate("/");
-      }, 1000);
+      setVerificationEmail(data.user.email);
+      setSuccess(data.message);
     } catch (error) {
       console.error("Error registering in: ", error);
-      setError("Registration failed.");
+      const responseData = error.response?.data;
+      if (responseData?.code === "VERIFICATION_EMAIL_FAILED") {
+        setVerificationEmail(responseData.email);
+      }
+      setError(responseData?.message || "Registration failed.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const email = verificationEmail || loginFormData.email || registerFormData.email;
+    if (!email) return;
+
+    try {
+      setResendLoading(true);
+      setError("");
+      const data = await resendVerificationEmail(email);
+      setSuccess(data.message);
+    } catch (error) {
+      console.error("Error resending verification email: ", error);
+      setError(
+        error.response?.data?.message ||
+          "The verification email could not be requested. Please try again."
+      );
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -97,8 +142,9 @@ function useAuthentication() {
 
   return { 
     loginFormData, setLoginFormData, registerFormData, setRegisterFormData, error, loading,
-    success, setSuccess, handleLogin, handleLoginChange, handleRegister, handleRegisterChange, 
-    handleLogOut
+    success, setSuccess, verificationEmail, resendLoading, verificationError,
+    handleLogin, handleLoginChange, handleRegister, handleRegisterChange,
+    handleResendVerification, handleLogOut
   };
 }
 
