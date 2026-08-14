@@ -72,26 +72,42 @@ const createTrip = async(tripData) => {
     end_date,
     total_budget,
     currency,
-    num_of_people,
   } = tripData;
 
-  const result = await pool.query(
-    `INSERT INTO trips
-      (user_id, title, destination, start_date, end_date, total_budget, currency, num_of_people)
-    VALUES
-      ($1, $2, $3, $4, $5, $6, $7, $8)
-    RETURNING *`,
-    [
-      user_id, title, destination, start_date, end_date, total_budget, currency, num_of_people
-    ]
-  );
-
-  return result.rows[0];
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query(
+      `INSERT INTO trips
+        (user_id, title, destination, start_date, end_date, total_budget, currency, num_of_people)
+       VALUES
+        ($1, $2, $3, $4, $5, $6, $7, 1)
+       RETURNING *`,
+      [user_id, title, destination, start_date, end_date, total_budget, currency]
+    );
+    const newTrip = result.rows[0];
+    await client.query(
+      `INSERT INTO trip_members (trip_id, user_id, name)
+       SELECT $1, u.id, u.name
+       FROM users u
+       WHERE u.id = $2
+       ON CONFLICT (trip_id, user_id) WHERE user_id IS NOT NULL
+       DO UPDATE SET name = EXCLUDED.name`,
+      [newTrip.id, user_id]
+    );
+    await client.query("COMMIT");
+    return newTrip;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const updateTrip = async(id, user_id, tripData) => {
   const {
-    title, destination, start_date, end_date, total_budget, currency, num_of_people,
+    title, destination, start_date, end_date, total_budget, currency,
   } = tripData;
 
   const result = await pool.query(
@@ -101,21 +117,20 @@ const updateTrip = async(id, user_id, tripData) => {
       start_date = $3, 
       end_date = $4, 
       total_budget = $5, 
-      currency = $6,
-      num_of_people = $7
-     WHERE t.id = $8
+      currency = $6
+     WHERE t.id = $7
       AND (
-        t.user_id = $9
+        t.user_id = $8
         OR EXISTS (
           SELECT 1
           FROM trip_collaborators tc
           WHERE tc.trip_id = t.id
-           AND tc.user_id = $9
+           AND tc.user_id = $8
            AND tc.status = 'accepted'
         )
       )
      RETURNING t.*`,
-    [ title, destination, start_date, end_date, total_budget, currency, num_of_people, id, user_id,]
+    [title, destination, start_date, end_date, total_budget, currency, id, user_id]
   );
 
   return result.rows[0];
@@ -134,9 +149,20 @@ const updateTripPeopleCount = async (tripId, user_id) => {
   const result = await pool.query(
     `UPDATE trips t
      SET num_of_people = (
-      SELECT COUNT(*)
-      FROM trip_members
-      WHERE trip_id = $1
+      SELECT COUNT(*)::integer
+      FROM trip_members tm
+      WHERE tm.trip_id = t.id
+       AND (
+        tm.user_id IS NULL
+        OR tm.user_id = t.user_id
+        OR EXISTS (
+          SELECT 1
+          FROM trip_collaborators active_collaborator
+          WHERE active_collaborator.trip_id = t.id
+           AND active_collaborator.user_id = tm.user_id
+           AND active_collaborator.status = 'accepted'
+        )
+       )
      )
      WHERE t.id = $1
       AND (

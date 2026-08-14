@@ -10,20 +10,22 @@ const getExpensesByTripId = async (tripId, user_id) => {
       e.paid_by_member_id,
       e.expense_date::text AS expense_date,
       e.created_at,
-      payer.name AS payer_name,
+      COALESCE(payer_user.name, payer.name) AS payer_name,
       COALESCE(
         json_agg(
           json_build_object(
             'id', sm.id,
-            'name', sm.name
+            'name', COALESCE(split_user.name, sm.name)
           )
         ) FILTER (WHERE sm.id IS NOT NULL),
         '[]'::json
       ) AS split_members
      FROM expenses e
      LEFT JOIN trip_members payer ON e.paid_by_member_id = payer.id
+     LEFT JOIN users payer_user ON payer.user_id = payer_user.id
      LEFT JOIN expense_splits es ON e.id = es.expense_id
      LEFT JOIN trip_members sm ON es.member_id = sm.id
+     LEFT JOIN users split_user ON sm.user_id = split_user.id
      JOIN trips t ON e.trip_id = t.id
      WHERE e.trip_id = $1
       AND (
@@ -36,7 +38,7 @@ const getExpensesByTripId = async (tripId, user_id) => {
            AND tc.status = 'accepted'
         )
       )
-     GROUP BY e.id, payer.name
+     GROUP BY e.id, payer.name, payer_user.name
      ORDER BY e.created_at DESC`,
     [tripId, user_id]
   );

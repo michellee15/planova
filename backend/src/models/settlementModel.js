@@ -3,13 +3,18 @@ const pool = require("../config/db");
 const getSettlementByTripId = async (tripId, user_id) => {
   const result = await pool.query(
     `SELECT sp.id,
-    sp.trip_id, sp.from_member_id, from_member.name AS from_member_name,
-    sp.to_member_id, to_member.name AS to_member_name,
+    sp.trip_id,
+    sp.from_member_id,
+    COALESCE(from_user.name, from_member.name) AS from_member_name,
+    sp.to_member_id,
+    COALESCE(to_user.name, to_member.name) AS to_member_name,
     sp.amount, sp.paid_at
     FROM settlement_payments sp
     JOIN trips t ON sp.trip_id = t.id
     JOIN trip_members from_member ON sp.from_member_id = from_member.id
     JOIN trip_members to_member ON sp.to_member_id = to_member.id
+    LEFT JOIN users from_user ON from_member.user_id = from_user.id
+    LEFT JOIN users to_user ON to_member.user_id = to_user.id
     WHERE sp.trip_id = $1
       AND (
         t.user_id = $2
