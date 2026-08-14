@@ -32,7 +32,7 @@ const getTrip = async (req, res) => {
 
 const createTrip = async (req, res) => {
   try {
-    const { title, destination, start_date, end_date, total_budget, currency, num_of_people,} = req.body;
+    const { title, destination, start_date, end_date, total_budget, currency } = req.body;
     if (!title || !destination) {
       return res.status(400).json({message: "Title and destination are required",});
     }
@@ -47,7 +47,6 @@ const createTrip = async (req, res) => {
       end_date: end_date || null,
       total_budget, 
       currency: currency || "SGD", 
-      num_of_people: num_of_people || 1,
     });
     res.status(201).json(newTrip);
   } catch (error) {

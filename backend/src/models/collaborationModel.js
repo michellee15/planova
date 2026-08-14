@@ -1,5 +1,75 @@
 const pool = require("../config/db");
 
+const lockTrip = async (client, tripId) => {
+  await client.query(
+    `SELECT id
+     FROM trips
+     WHERE id = $1
+     FOR UPDATE`,
+    [tripId]
+  );
+};
+
+const syncTripPeopleCount = async (client, tripId) => {
+  await client.query(
+    `UPDATE trips t
+     SET num_of_people = (
+       SELECT COUNT(*)::integer
+       FROM trip_members tm
+       WHERE tm.trip_id = t.id
+        AND (
+          tm.user_id IS NULL
+          OR tm.user_id = t.user_id
+          OR EXISTS (
+            SELECT 1
+            FROM trip_collaborators active_collaborator
+            WHERE active_collaborator.trip_id = t.id
+             AND active_collaborator.user_id = tm.user_id
+             AND active_collaborator.status = 'accepted'
+          )
+        )
+     )
+     WHERE t.id = $1`,
+    [tripId]
+  );
+};
+
+const ensureRegisteredMember = async (client, tripId, userId) => {
+  await client.query(
+    `UPDATE trip_members tm
+     SET user_id = u.id,
+      name = u.name
+     FROM users u
+     WHERE u.id = $2
+      AND tm.id = (
+        SELECT candidate.id
+        FROM trip_members candidate
+        WHERE candidate.trip_id = $1
+         AND candidate.user_id IS NULL
+         AND LOWER(BTRIM(candidate.name)) = LOWER(BTRIM(u.name))
+        ORDER BY candidate.id
+        LIMIT 1
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM trip_members linked
+        WHERE linked.trip_id = $1
+         AND linked.user_id = $2
+      )`,
+    [tripId, userId]
+  );
+
+  await client.query(
+    `INSERT INTO trip_members (trip_id, user_id, name)
+     SELECT $1, u.id, u.name
+     FROM users u
+     WHERE u.id = $2
+     ON CONFLICT (trip_id, user_id) WHERE user_id IS NOT NULL
+     DO UPDATE SET name = EXCLUDED.name`,
+    [tripId, userId]
+  );
+};
+
 const getTripAccess = async (tripId, userId) => {
   const result = await pool.query(
     `SELECT CASE
@@ -70,17 +140,36 @@ const getPendingInvitations = async (userId) => {
 };
 
 const acceptInvitation = async (invitationId, userId) => {
-  const result = await pool.query(
-    `UPDATE trip_collaborators
-     SET status = 'accepted',
-      accepted_at = NOW()
-     WHERE id = $1
-      AND user_id = $2
-      AND status = 'pending'
-     RETURNING id, trip_id, user_id, status, created_at, accepted_at`,
-    [invitationId, userId]
-  );
-  return result.rows[0];
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query(
+      `UPDATE trip_collaborators
+       SET status = 'accepted',
+        accepted_at = NOW()
+       WHERE id = $1
+        AND user_id = $2
+        AND status = 'pending'
+       RETURNING id, trip_id, user_id, status, created_at, accepted_at`,
+      [invitationId, userId]
+    );
+    const invitation = result.rows[0];
+    if (!invitation) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    await lockTrip(client, invitation.trip_id);
+    await ensureRegisteredMember(client, invitation.trip_id, userId);
+    await syncTripPeopleCount(client, invitation.trip_id);
+    await client.query("COMMIT");
+    return invitation;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const declineInvitation = async (invitationId, userId) => {
@@ -149,6 +238,7 @@ const removeCollaborator = async (tripId, collaboratorUserId, ownerUserId) => {
       await client.query("ROLLBACK");
       return null;
     }
+    await lockTrip(client, tripId);
     await client.query(
       `UPDATE chat_sessions
        SET trip_id = NULL
@@ -156,6 +246,7 @@ const removeCollaborator = async (tripId, collaboratorUserId, ownerUserId) => {
         AND user_id = $2`,
       [tripId, collaboratorUserId]
     );
+    await syncTripPeopleCount(client, tripId);
     await client.query("COMMIT");
     return removed;
   } catch (error) {
@@ -183,6 +274,7 @@ const leaveTrip = async (tripId, userId) => {
       await client.query("ROLLBACK");
       return null;
     }
+    await lockTrip(client, tripId);
     await client.query(
       `UPDATE chat_sessions
        SET trip_id = NULL
@@ -190,6 +282,7 @@ const leaveTrip = async (tripId, userId) => {
         AND user_id = $2`,
       [tripId, userId]
     );
+    await syncTripPeopleCount(client, tripId);
     await client.query("COMMIT");
     return removed;
   } catch (error) {
