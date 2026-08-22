@@ -105,6 +105,10 @@ function TripDetailsPage() {
   const {
     members,
     memberFormData,
+    membersLoading,
+    memberSaving,
+    memberError,
+    loadMembers,
     handleMemberChange,
     handleCreateMember,
     handleDeleteMember,
@@ -184,6 +188,15 @@ function TripDetailsPage() {
 
   const balances = calculateBalances(members, expenses, settlementPayments);
   const settlements = calculateSettlements(balances);
+  const displayedTrip =
+    !membersLoading && members.length > 0
+      ? { ...trip, num_of_people: members.length }
+      : trip;
+
+  const handleRemoveCollaborator = async (userId) => {
+    await removeCollaborator(userId);
+    await loadMembers();
+  };
 
   return (
     <main className="trip-details-page">
@@ -193,7 +206,7 @@ function TripDetailsPage() {
       </Link>
 
       <TripHeader
-        trip={trip}
+        trip={displayedTrip}
         accessRole={accessRole || trip.access_role}
         collaboratorCount={acceptedCount}
         collaboratorsLoading={collaboratorsLoading}
@@ -213,6 +226,9 @@ function TripDetailsPage() {
             {tab.id === "expenses" && expenses.length > 0 && (
               <span>{expenses.length}</span>
             )}
+            {tab.id === "members" && !membersLoading && members.length > 0 && (
+              <span>{members.length}</span>
+            )}
           </button>
         ))}
       </nav>
@@ -220,7 +236,7 @@ function TripDetailsPage() {
       <div className="trip-tab-content">
         {activeTab === "overview" && (
           <div className="trip-overview-layout">
-            <TripOverview trip={trip} />
+            <TripOverview trip={displayedTrip} />
             <BudgetSummary trip={trip} expenses={expenses} />
             <section className="overview-next-step">
               <div>
@@ -336,16 +352,19 @@ function TripDetailsPage() {
             <SectionIntro
               eyebrow="Travel together"
               title="Trip members"
-              description="Add everyone joining this adventure to make expense splitting simple."
+              description="Collaborators with Planova accounts are synced automatically. Add any other guests here for easy expense splitting."
               icon="users"
             />
             <MemberForm
               memberFormData={memberFormData}
               handleMemberChange={handleMemberChange}
               handleCreateMember={handleCreateMember}
+              saving={memberSaving}
+              error={memberError}
             />
             <MemberList
               members={members}
+              loading={membersLoading}
               handleDeleteMember={handleDeleteMember}
             />
           </section>
@@ -369,7 +388,7 @@ function TripDetailsPage() {
           }}
           onInvite={inviteCollaborator}
           onCancelInvitation={cancelInvitation}
-          onRemoveCollaborator={removeCollaborator}
+          onRemoveCollaborator={handleRemoveCollaborator}
           onLeftTrip={() => navigate("/", { replace: true })}
         />
       )}
