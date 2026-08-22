@@ -74,7 +74,7 @@ function CollaborationModal({
     const confirmed = await confirm({
       title: `Remove ${collaborator.name || collaborator.email}?`,
       description:
-        "They will no longer be able to view or edit this trip. Their private AI conversations will remain in their account without this trip attached.",
+        "They will no longer be able to view or edit this trip, and will stop appearing as an active trip member. Their private AI conversations will remain in their account without this trip attached.",
       confirmLabel: "Remove access",
       destructive: true,
     });
@@ -166,7 +166,10 @@ function CollaborationModal({
                 Invite
               </button>
             </div>
-            <small>They need an existing Planova account to join.</small>
+            <small>
+              They need an existing Planova account. Once accepted, they are
+              added as a trip member automatically.
+            </small>
           </form>
         )}
 

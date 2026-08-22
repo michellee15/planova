@@ -25,7 +25,6 @@ const createEmptyForm = () => ({
   end_date: "",
   total_budget: "",
   currency: getPreferences().defaultCurrency,
-  num_of_people: 1,
 });
 
 const paletteNames = ["lavender", "peach", "mint", "sky"];
@@ -121,17 +120,10 @@ function TripForm({ formData, onChange, onSubmit, onCancel, error, isEditing }) 
           />
         </div>
 
-        <div className="form-field full-width">
-          <label htmlFor="trip-people">Number of travellers</label>
-          <input
-            id="trip-people"
-            type="number"
-            min="1"
-            name="num_of_people"
-            value={formData.num_of_people}
-            onChange={onChange}
-          />
-        </div>
+        <p className="form-help full-width">
+          Traveller count updates automatically as you add guests or as
+          collaborators accept their invitations.
+        </p>
       </div>
 
       {error && (
@@ -246,7 +238,6 @@ function TripsPage() {
       end_date: trip.end_date?.slice(0, 10) || "",
       total_budget: trip.total_budget ?? "",
       currency: trip.currency || "SGD",
-      num_of_people: trip.num_of_people || 1,
     });
     setFormError("");
     setEditingTrip(trip);
@@ -259,11 +250,11 @@ function TripsPage() {
   };
 
   const normaliseForm = () => ({
-    ...formData,
+    title: formData.title,
+    destination: formData.destination,
     currency: formData.currency.trim().toUpperCase() || "SGD",
     total_budget:
       formData.total_budget === "" ? null : Number(formData.total_budget),
-    num_of_people: Number(formData.num_of_people) || 1,
     start_date: formData.start_date || null,
     end_date: formData.end_date || null,
   });
