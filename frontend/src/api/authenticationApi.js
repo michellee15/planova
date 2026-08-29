@@ -15,18 +15,6 @@ export const loginUser = async (userData) => {
   return response.data;
 };
 
-export const verifyEmail = async (token) => {
-  const response = await axios.post(`${API_URL}/verify-email`, { token });
-  return response.data;
-};
-
-export const resendVerificationEmail = async (email) => {
-  const response = await axios.post(`${API_URL}/resend-verification`, {
-    email,
-  });
-  return response.data;
-};
-
 export const getCurrentUser = async () => {
   const response = await axios.get(`${USER_API_URL}/me`, {
     headers: getAuthHeaders(),
