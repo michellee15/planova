@@ -45,11 +45,6 @@ PostgreSQL administrator or run:
 psql -U postgres -c "CREATE DATABASE planova;"
 ```
 
-> The migrations in this repository are incremental. Before running them on a
-> fresh database, restore the project's base schema or database dump. The base
-> schema must contain the `users`, `trips`, `trip_members`, `expenses`,
-> `expense_splits`, `itinerary_items`, and `settlement_payments` tables.
-
 ### 3. Configure the backend environment
 
 Create the backend environment file from the provided template:
@@ -69,7 +64,8 @@ DB_PASSWORD=your_postgres_password
 DB_PORT=5432
 
 JWT_SECRET=replace_with_a_long_random_secret
-PORT=5000
+PORT=5001
+REQUIRE_EMAIL_VERIFICATION=false
 
 GEMINI_API_KEY=
 GEMINI_MODEL=gemini-3.6-flash
@@ -88,18 +84,28 @@ You can generate a JWT secret with:
 openssl rand -hex 32
 ```
 
-The database settings and `JWT_SECRET` are required. A Gemini API key is
-required only for the AI assistant. Mailjet credentials and a verified sender
-address are required to register and verify new accounts; without them, account
-creation cannot send its verification email. The Gemini and Overpass base URLs
-normally do not need to be changed.
+The database settings and `JWT_SECRET` are required. Keep
+`REQUIRE_EMAIL_VERIFICATION=false` for local development without an email
+provider; new accounts are verified immediately. In production, set it to
+`true` and configure Mailjet credentials with a verified sender address. A
+Gemini API key is required only for the AI assistant. The Gemini and Overpass
+base URLs normally do not need to be changed.
 
-Keep `PORT=5000` for local development because the frontend API modules use that
-port by default.
+Create `frontend/.env` from its template so every frontend API module uses the
+same backend URL:
+
+```bash
+cd ../frontend
+cp .env.example .env
+```
+
+The local configuration uses port `5001` because macOS may reserve port `5000`
+for AirPlay Receiver. If you choose another port, update both `backend/.env` and
+`frontend/.env`.
 
 ### 4. Run the database migrations
 
-After restoring the base schema, run the migration script from `backend/`:
+Run the migration script from `backend/`:
 
 ```bash
 npm run migrate
@@ -118,7 +124,7 @@ cd backend
 npm run dev
 ```
 
-The API will be available at <http://localhost:5000>. Opening that URL should
+The API will be available at <http://localhost:5001>. Opening that URL should
 display `Planova API is running`.
 
 Start the frontend in a second terminal:
@@ -146,8 +152,8 @@ Run these commands from the relevant directory:
 
 ## Troubleshooting
 
-- `relation "..." does not exist` during migration: restore the base schema
-  before applying the incremental migrations.
+- `relation "..." does not exist` during migration: pull the latest changes and
+  confirm that `backend/db/migrations/000_initial_schema.sql` is present.
 - `password authentication failed`: check `DB_USER`, `DB_PASSWORD`, and your
   PostgreSQL authentication configuration.
 - `ECONNREFUSED` on port 5432: make sure PostgreSQL is running and `DB_HOST` and

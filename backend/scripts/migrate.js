@@ -20,7 +20,14 @@ const runMigrations = async () => {
 
 runMigrations()
   .catch((error) => {
-    console.error("Migration failed:", error.message);
+    const connectionErrors = Array.isArray(error.errors)
+      ? error.errors
+          .map((cause) => cause.code || cause.message)
+          .filter(Boolean)
+          .join(", ")
+      : "";
+    const details = error.message || error.code || connectionErrors || error.name;
+    console.error("Migration failed:", details);
     process.exitCode = 1;
   })
   .finally(() => pool.end());
