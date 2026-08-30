@@ -1,5 +1,6 @@
 import {getAuthHeaders} from "./authenticationHeader";
-const API_URL = "http://localhost:5000/api";
+import { API_BASE_URL } from "./config";
+const API_URL = API_BASE_URL;
 
 export const getTravelTimes = async ({origin, destination}) => {
   const response = await fetch(`${API_URL}/routes/travel-times`, {

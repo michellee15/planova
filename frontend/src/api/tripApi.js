@@ -1,8 +1,9 @@
 // axios library act as bridge so that react frontend can send http req to backend api
 import axios from "axios";
 import {getAuthHeaders} from "./authenticationHeader";
+import { API_BASE_URL } from "./config";
 
-const API_URL = "http://localhost:5000/api/trips";
+const API_URL = `${API_BASE_URL}/trips`;
 
 export const getTrips = async () => {
   const response = await axios.get(API_URL, {headers: getAuthHeaders(),});

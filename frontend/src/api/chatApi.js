@@ -1,6 +1,7 @@
 import { getAuthHeaders } from "./authenticationHeader";
+import { API_BASE_URL } from "./config";
 
-const API_URL = "http://localhost:5000/api/chat";
+const API_URL = `${API_BASE_URL}/chat`;
 
 const readResponse = async (response, fallbackMessage) => {
   const data = await response.json().catch(() => null);

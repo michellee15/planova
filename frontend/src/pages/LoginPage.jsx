@@ -35,13 +35,9 @@ function LoginPage() {
     loginFormData,
     error,
     loading,
-    resendLoading,
-    verificationEmail,
-    verificationError,
     success,
     handleLogin,
     handleLoginChange,
-    handleResendVerification,
   } = useAuthentication();
 
   return (
@@ -60,13 +56,6 @@ function LoginPage() {
           <p className="auth-intro">
             Sign in to pick up where your plans left off.
           </p>
-
-          {verificationError === "invalid" && (
-            <p className="auth-alert auth-alert-error">
-              That verification link is invalid or has expired. Sign in below
-              to request a new one.
-            </p>
-          )}
 
           <form className="auth-form" onSubmit={handleLogin}>
             <div className="form-field">
@@ -102,18 +91,6 @@ function LoginPage() {
               {loading ? "Signing you in..." : "Sign in"}
               {!loading && <Icon name="arrowRight" size={17} />}
             </button>
-            {verificationEmail && (
-              <button
-                className="btn btn-secondary"
-                type="button"
-                onClick={handleResendVerification}
-                disabled={resendLoading}
-              >
-                {resendLoading
-                  ? "Requesting email..."
-                  : "Resend verification email"}
-              </button>
-            )}
           </form>
 
           {success && (

@@ -7,12 +7,9 @@ function RegisterPage() {
     registerFormData,
     error,
     loading,
-    resendLoading,
-    verificationEmail,
     success,
     handleRegister,
     handleRegisterChange,
-    handleResendVerification,
   } = useAuthentication();
 
   return (
@@ -76,7 +73,11 @@ function RegisterPage() {
             </div>
 
             {error && <p className="auth-alert auth-alert-error">{error}</p>}
-            <button className="btn btn-primary" type="submit" disabled={loading}>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={loading || Boolean(success)}
+            >
               {loading ? "Creating your space..." : "Create account"}
               {!loading && <Icon name="arrowRight" size={17} />}
             </button>
@@ -84,20 +85,6 @@ function RegisterPage() {
 
           {success && (
             <p className="auth-alert auth-alert-success">{success}</p>
-          )}
-          {verificationEmail && (
-            <div className="auth-verification-actions">
-              <button
-                className="btn btn-secondary"
-                type="button"
-                onClick={handleResendVerification}
-                disabled={resendLoading}
-              >
-                {resendLoading
-                  ? "Requesting email..."
-                  : "Resend verification email"}
-              </button>
-            </div>
           )}
           <p className="auth-switch">
             Already have an account? <Link to="/login">Sign in</Link>
